@@ -15,3 +15,7 @@ alter table notes enable row level security;
 
 -- 3. anon 및 authenticated 역할에 자료 읽기(SELECT) 권한을 부여하지 않음
 revoke select on table notes from anon, authenticated;
+
+-- 4. 3단계 UUID 키 지원: 기존 bigint id 컬럼을 text로 변환 (Supabase SQL Editor에서 실행)
+-- alter table notes alter column id drop identity if exists;
+-- alter table notes alter column id type text;
