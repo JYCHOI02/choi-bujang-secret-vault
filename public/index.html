@@ -199,7 +199,7 @@
     const list = document.querySelector('#notes');
 
     let client = null;
-    if (SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY !== 'sb_publishable_XHShPC6mM-ARLYB6qgEjrg_wlVWyb9d') {
+    if (SUPABASE_PUBLISHABLE_KEY) {
       try {
         client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
       } catch (err) {
