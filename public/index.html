@@ -1,33 +1,161 @@
 <!doctype html>
 <html lang="ko">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>BYTE BACK | 가상 자료실</title>
   <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; }
-    body { margin: 0; min-height: 100vh; background: #101a28; color: #ecf4ff; }
-    main { max-width: 760px; margin: 0 auto; padding: 44px 22px 64px; }
-    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    .eyebrow { color: #8ad8df; font-size: 14px; font-weight: 700; letter-spacing: .08em; }
-    h1 { margin: 8px 0; font-size: clamp(28px, 6vw, 44px); line-height: 1.2; }
-    p { font-size: 16px; line-height: 1.6; color: #bfd0e5; }
-    .notice { margin: 20px 0; padding: 16px; border: 1px solid #d07384; border-radius: 12px; color: #ffe3e8; background: #612a3544; }
-    form { background: #1a2a3d; border: 1px solid #51667c; border-radius: 14px; padding: 24px; margin: 24px 0; display: grid; gap: 14px; }
-    label { font-weight: 600; font-size: 14px; color: #8ad8df; }
-    input { width: 100%; box-sizing: border-box; background: #101a28; border: 1px solid #51667c; border-radius: 8px; padding: 12px 14px; color: #ecf4ff; font: inherit; }
-    input:focus { outline: none; border-color: #8ad8df; }
-    button { cursor: pointer; border: none; border-radius: 8px; padding: 12px 20px; font: inherit; font-weight: 600; background: #214ecc; color: white; transition: opacity .2s; }
-    button:disabled { opacity: .5; cursor: not-allowed; }
-    #logout { background: #612a35; border: 1px solid #d07384; color: #ffe3e8; padding: 8px 16px; font-size: 14px; }
-    #message { min-height: 24px; font-weight: 500; color: #ffe3e8; margin: 12px 0; }
-    #login-state { font-size: 14px; color: #8ad8df; font-weight: 600; }
-    ul { list-style: none; display: grid; gap: 12px; padding: 0; margin-top: 24px; }
-    li { border: 1px solid #51667c; border-radius: 14px; padding: 17px 19px; background: #1a2a3d; }
-    strong { display: block; font-size: 18px; margin-bottom: 5px; }
-    li span { color: #bfd0e5; }
+    :root {
+      color-scheme: dark;
+      font-family: system-ui, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #101a28;
+      color: #ecf4ff;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 44px 22px 64px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .eyebrow {
+      color: #8ad8df;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+
+    h1 {
+      margin: 8px 0;
+      font-size: clamp(28px, 6vw, 44px);
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: 16px;
+      line-height: 1.6;
+      color: #bfd0e5;
+    }
+
+    .notice {
+      margin: 20px 0;
+      padding: 16px;
+      border: 1px solid #d07384;
+      border-radius: 12px;
+      color: #ffe3e8;
+      background: #612a3544;
+    }
+
+    form {
+      background: #1a2a3d;
+      border: 1px solid #51667c;
+      border-radius: 14px;
+      padding: 24px;
+      margin: 24px 0;
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      font-weight: 600;
+      font-size: 14px;
+      color: #8ad8df;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      background: #101a28;
+      border: 1px solid #51667c;
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: #ecf4ff;
+      font: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #8ad8df;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font: inherit;
+      font-weight: 600;
+      background: #214ecc;
+      color: white;
+      transition: opacity .2s;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    #logout {
+      background: #612a35;
+      border: 1px solid #d07384;
+      color: #ffe3e8;
+      padding: 8px 16px;
+      font-size: 14px;
+    }
+
+    #message {
+      min-height: 24px;
+      font-weight: 500;
+      color: #ffe3e8;
+      margin: 12px 0;
+    }
+
+    #login-state {
+      font-size: 14px;
+      color: #8ad8df;
+      font-weight: 600;
+    }
+
+    ul {
+      list-style: none;
+      display: grid;
+      gap: 12px;
+      padding: 0;
+      margin-top: 24px;
+    }
+
+    li {
+      border: 1px solid #51667c;
+      border-radius: 14px;
+      padding: 17px 19px;
+      background: #1a2a3d;
+    }
+
+    strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    li span {
+      color: #bfd0e5;
+    }
   </style>
 </head>
+
 <body>
   <main>
     <header>
@@ -47,19 +175,22 @@
       <label for="email">이메일</label>
       <input id="email" name="email" type="email" autocomplete="username" placeholder="이메일을 입력하세요" required>
       <label for="password">비밀번호</label>
-      <input id="password" name="password" type="password" autocomplete="current-password" placeholder="비밀번호를 입력하세요" required>
+      <input id="password" name="password" type="password" autocomplete="current-password" placeholder="비밀번호를 입력하세요"
+        required>
       <button id="login" type="submit">로그인</button>
     </form>
 
     <div class="notice">실습용 계정으로 로그인합니다. 실제 개인정보는 입력하지 마세요.</div>
-    <ul id="notes" aria-live="polite"><li>가상 자료를 불러오는 중입니다.</li></ul>
+    <ul id="notes" aria-live="polite">
+      <li>가상 자료를 불러오는 중입니다.</li>
+    </ul>
   </main>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
     const SUPABASE_URL = 'https://haeemsysekuvhtcvlrqv.supabase.co';
-    const SUPABASE_PUBLISHABLE_KEY = '여기에_PUBLISHABLE_KEY_입력';
+    const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_XHShPC6mM-ARLYB6qgEjrg_wlVWyb9d';
 
     const loginForm = document.querySelector('#login-form');
     const logoutBtn = document.querySelector('#logout');
@@ -68,7 +199,7 @@
     const list = document.querySelector('#notes');
 
     let client = null;
-    if (SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY !== '여기에_PUBLISHABLE_KEY_입력') {
+    if (SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY !== 'sb_publishable_XHShPC6mM-ARLYB6qgEjrg_wlVWyb9d') {
       try {
         client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
       } catch (err) {
@@ -180,4 +311,5 @@
     loadNotes();
   </script>
 </body>
+
 </html>
