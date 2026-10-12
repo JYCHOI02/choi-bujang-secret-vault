@@ -51,19 +51,27 @@
 2. **서버리스 조회 API**: Vercel의 `/api/notes`(`api/notes.js`)가 서버 환경변수를 통해 Supabase에 접속하여 가상 메모를 조회하고 프론트엔드에 전달합니다.
 3. **정적 배포 보호**: 빌드 시 `public/data.json` 생성을 중단하여 배포된 `/data.json` 접근 시 404로 차단됩니다.
 
+## 3단계: 진짜 로그인을 붙입니다
+
+- Supabase Auth를 통해 실제 사용자 로그인/로그아웃 기능을 구현하고 토큰을 헤더에 첨부하여 API를 호출합니다.
+- 서버 API(`/api/notes`)에서 JWT 토큰을 검증하여 비로그인 요청을 차단(HTTP 401)하고, 메모 생성 시 검증된 사용자 ID를 `owner_id`로 저장합니다.
+- 가상 메모의 CRUD(GET, POST, PUT, DELETE) 엔드포인트를 구현하고 `aleph.config.json`의 `allowedRoutes`에 등록했습니다.
+
+### 3단계 현재 작동하는 기능
+1. **진짜 로그인 연동**: Supabase Auth를 통한 로그인/로그아웃 및 세션 토큰(JWT) 관리, 요청 시 Authorization Bearer 헤더 전달
+2. **서버 측 로그인 검사**: `/api/notes` API에서 토큰 서명을 검증하며 비로그인 요청은 HTTP 401로 거부
+3. **소유자 ID 저장 및 CRUD API**: 메모 추가 시 검증된 사용자 ID를 `owner_id`로 저장하며, 단건조회(GET /:id), 수정(PUT /:id), 삭제(DELETE /:id), 목록조회(GET /api/notes) 지원 및 `allowedRoutes` 등록
+
 ### 다시 실행하는 방법
-1. **로컬 빌드 검증**:
-   ```powershell
-   node scripts/build-public.mjs --local
-   ```
-2. **단위 시험 실행**:
+1. **단위 시험 실행**:
    ```powershell
    npm run test:r5
    ```
-3. **제출 묶음 생성 및 자기 점검**:
+2. **제출 묶음 생성 및 자기 점검**:
    ```powershell
    npm run bundle
    ```
+
 
 ## 다음 단계의 코딩 도구에 전달할 규칙
 

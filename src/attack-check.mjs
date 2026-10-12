@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (config.step !== 1 && config.step !== 2) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (config.step !== 1 && config.step !== 2 && config.step !== 3) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -52,8 +52,28 @@ export async function runAttackChecks(config) {
   if (apiResponse.ok) {
     try {
       const data = await apiResponse.json();
-      apiVisible = Array.isArray(data.notes) && data.notes.length > 0;
+      const notes = Array.isArray(data) ? data : (data?.notes || []);
+      apiVisible = notes.length > 0;
     } catch {}
+  }
+
+  if (config.step === 3) {
+    return [
+      {
+        attackId: 'anonymous_static_data_read',
+        expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
+        observed: staticVisible
+          ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임'
+          : `정적 파일에서 가상 메모가 노출되지 않음 (HTTP ${staticResponse.status})`,
+      },
+      {
+        attackId: 'anonymous_api_read',
+        expected: '비로그인 API 요청(/api/notes) 시 가상 메모가 노출되지 않고 거부되어야 함',
+        observed: apiVisible
+          ? '비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP 200)'
+          : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
+      },
+    ];
   }
 
   return [
