@@ -1,4 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
+import { createLoginVerifier } from '../src/verify-login.mjs';
+
+let verifyLogin = null;
+function getVerifier(supabaseSecretKey) {
+  if (!verifyLogin) {
+    const config = JSON.parse(readFileSync(new URL('../aleph.config.json', import.meta.url), 'utf8'));
+    verifyLogin = createLoginVerifier({ config, supabaseSecretKey });
+  }
+  return verifyLogin;
+}
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
@@ -13,6 +24,23 @@ export default async function handler(request, response) {
 
   if (!supabaseUrl || !supabaseKey) {
     return response.status(500).json({ error: 'SERVER_CONFIGURATION_ERROR' });
+  }
+
+  const authorization = request.headers['authorization'] || request.headers.authorization;
+  if (!authorization) {
+    return response.status(401).json({ error: 'UNAUTHORIZED' });
+  }
+
+  let session = null;
+  try {
+    const verifier = getVerifier(supabaseKey);
+    session = await verifier(authorization);
+  } catch {
+    return response.status(401).json({ error: 'UNAUTHORIZED' });
+  }
+
+  if (!session) {
+    return response.status(401).json({ error: 'UNAUTHORIZED' });
   }
 
   try {
