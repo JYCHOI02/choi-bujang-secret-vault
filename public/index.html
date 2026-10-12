@@ -314,7 +314,10 @@
           },
           body: JSON.stringify({ title, body }),
         });
-        if (!res.ok) throw new Error('메모 추가에 실패했습니다.');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || '메모 추가에 실패했습니다.');
+        }
         document.querySelector('#note-title').value = '';
         document.querySelector('#note-body').value = '';
         await loadNotes(currentSession.access_token);
@@ -341,7 +344,10 @@
           },
           body: JSON.stringify({ title: newTitle, body: newBody }),
         });
-        if (!res.ok) throw new Error('메모 수정에 실패했습니다.');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || '메모 수정에 실패했습니다.');
+        }
         await loadNotes(currentSession.access_token);
       } catch (err) {
         alert(err.message);
@@ -359,7 +365,10 @@
             'Authorization': `Bearer ${currentSession.access_token}`,
           },
         });
-        if (!res.ok) throw new Error('메모 삭제에 실패했습니다.');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.details || errData.error || '메모 삭제에 실패했습니다.');
+        }
         await loadNotes(currentSession.access_token);
       } catch (err) {
         alert(err.message);
