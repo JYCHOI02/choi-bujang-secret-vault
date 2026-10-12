@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -57,7 +57,7 @@ export async function runAttackChecks(config) {
     } catch {}
   }
 
-  if (config.step === 4) {
+  if (config.step === 4 || config.step === 5) {
     return [
       {
         attackId: 'anonymous_static_data_read',
@@ -74,6 +74,7 @@ export async function runAttackChecks(config) {
           : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
       },
       ...(await ownerChecks(app)),
+      ...(config.step === 5 ? [await originalApiCheck(config)] : []),
     ];
   }
 
@@ -182,4 +183,40 @@ async function ownerChecks(app) {
     observed: '미실행: B 메모를 실제로 바꿀 수 있어 자동 점검에서 제외함 (브라우저 수동 시험 대상)',
   });
   return results;
+}
+
+// 5단계: 원본 자료 API(Supabase REST)를 브라우저 공개 키(anon)로 직접 요청합니다.
+// 공개 키는 이미 public/index.html에 공개된 값이며, 키·메모 본문은 결과에 넣지 않습니다.
+async function originalApiCheck(config) {
+  const expected = '원본 자료 API(originalApiUrl)를 공개 키로 직접 요청하면 권한 없음으로 거부되어야 함';
+  let url;
+  try { url = new URL(config.originalApiUrl); } catch { url = null; }
+  if (!url || url.protocol !== 'https:' || url.search || url.hash) {
+    return { attackId: 'original_api_anon_read', expected, observed: '미실행: originalApiUrl이 쿼리 없는 HTTPS 주소가 아님' };
+  }
+  let anonKey = '';
+  try {
+    const { readFile } = await import('node:fs/promises');
+    const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+    anonKey = /['"](sb_publishable_[A-Za-z0-9_-]+)['"]/u.exec(html)?.[1] ?? '';
+  } catch {}
+  if (!anonKey) {
+    return { attackId: 'original_api_anon_read', expected, observed: '미실행: public/index.html에서 공개 키를 찾지 못함' };
+  }
+  const response = await fetch(url, {
+    redirect: 'error', signal: AbortSignal.timeout(10000), headers: { apikey: anonKey },
+  });
+  let rows = null;
+  let code = '';
+  try {
+    const data = await response.json();
+    if (Array.isArray(data)) rows = data.length;
+    else if (typeof data?.code === 'string') code = data.code;
+  } catch {}
+  return {
+    attackId: 'original_api_anon_read', expected,
+    observed: response.ok
+      ? `공개 키 직접 요청이 허용됨 (HTTP ${response.status}, ${rows ?? 0}건)`
+      : `공개 키 직접 요청이 거부됨 (HTTP ${response.status}${code ? `, ${code}` : ''})`,
+  };
 }
