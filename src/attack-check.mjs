@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -57,7 +57,7 @@ export async function runAttackChecks(config) {
     } catch {}
   }
 
-  if (config.step === 4 || config.step === 5 || config.step === 6 || config.step === 7) {
+  if (config.step === 4 || config.step === 5 || config.step === 6 || config.step === 7 || config.step === 8) {
     return [
       {
         attackId: 'anonymous_static_data_read',
@@ -74,17 +74,24 @@ export async function runAttackChecks(config) {
           : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
       },
       ...(await ownerChecks(app)),
-      ...(config.step === 5 || config.step === 6 || config.step === 7 ? [await originalApiCheck(config)] : []),
-      ...(config.step === 6 || config.step === 7 ? [{
+      ...(config.step === 5 || config.step === 6 || config.step === 7 || config.step === 8
+        ? [await originalApiCheck(config)] : []),
+      ...(config.step === 6 || config.step === 7 || config.step === 8 ? [{
         attackId: 'device_not_registered',
         expected: '미등록 기기의 접근 거부는 ALEPH SDP 엔진(릴레이)이 decide() 호출 전에 처리함',
         observed: '미실행: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
       }] : []),
-      ...(config.step === 7 ? [{
+      ...(config.step === 7 || config.step === 8 ? [{
         attackId: 'step_up_required',
         expected: '평소와 다른 시각·처음 보는 네트워크·갑작스런 다량 읽기가 겹치면 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
+      ...(config.step === 8 ? [{
+        attackId: 'write_zone_step_up',
+        expected: '쓰기 구역(POST/PUT/DELETE)은 조회보다 낮은 이상 신호 문턱에서 재확인(step_up)을 요구함',
+        observed: '미실행: 이 배포 서버 함수는 decide()의 구역 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
+      }] : []),
+      ...(config.step === 8 ? [await anonymousAnnouncementsCheck(app)] : []),
     ];
   }
 
@@ -193,6 +200,28 @@ async function ownerChecks(app) {
     observed: '미실행: B 메모를 실제로 바꿀 수 있어 자동 점검에서 제외함 (브라우저 수동 시험 대상)',
   });
   return results;
+}
+
+// 8단계: 강사 공지(announcements)는 메모와 다른 자원·경로입니다. 비로그인 요청이
+// 거부되는지만 확인합니다(소유자 개념이 없어 교차 소유자 점검은 해당 없음).
+async function anonymousAnnouncementsCheck(app) {
+  const expected = '비로그인 API 요청(/api/announcements) 시 가상 공지가 노출되지 않고 거부되어야 함';
+  const response = await fetch(new URL('/api/announcements', app), {
+    redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  let visible = false;
+  if (response.ok) {
+    try {
+      const data = await response.json();
+      visible = Array.isArray(data) && data.length > 0;
+    } catch {}
+  }
+  return {
+    attackId: 'anonymous_announcements_read', expected,
+    observed: visible
+      ? '비로그인 API 요청에서 가상 공지 목록이 반환됨 (HTTP 200)'
+      : `비로그인 API 요청이 정상 거부됨 (HTTP ${response.status})`,
+  };
 }
 
 // 5단계: 원본 자료 API(Supabase REST)를 브라우저 공개 키(anon)로 직접 요청합니다.

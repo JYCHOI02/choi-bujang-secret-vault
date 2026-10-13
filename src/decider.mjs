@@ -14,6 +14,9 @@ const ZONE_BY_ROUTE = Object.freeze({
   'POST /notes': 'write',
   'PUT /notes/:id': 'write',
   'DELETE /notes/:id': 'write',
+  // 강사 공지(announcements)는 메모(notes)와 다른 자원입니다. 소유자가 없는
+  // 공용 읽기 자료라 조회 구역과 같은 문턱을 쓰지만, route로 메모와 구별됩니다.
+  'GET /announcements': 'read',
 });
 
 const DEVICE_ID_SHAPE = /^[0-9a-f]{16}$/u;
