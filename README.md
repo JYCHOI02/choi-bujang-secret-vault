@@ -106,10 +106,10 @@
 2. **제출 묶음과 자기 점검**: `npm run bundle` — 4단계 점검에 더해 원본 자료 API를 공개 키로 직접 요청한 결과(`original_api_anon_read`)를 기록합니다.
 3. **원본 직접 요청 수동 확인**: `curl.exe -i "<originalApiUrl>" -H "apikey: <public/index.html의 공개 키>"` → 거부(401/403, `42501`)가 정상입니다.
 
-## 6단계: 등록한 기기만 자료실에 들어옵니다 (진행 중)
+## 6단계: 등록한 기기만 자료실에 들어옵니다
 
 - `src/decider.mjs`에 `device_registered` 규칙을 추가해, 요청의 `deviceRegistered`가 `true`일 때만 허용(`allow`)하고, `false`이거나 값이 없으면 `deny`·`device_not_registered`로 거부합니다 (`docs/DECIDER_REQUEST.md` 계약 기준).
-- 이 판정기는 아직 배포된 `/api/notes` 요청에 직접 연결되어 있지 않습니다. 반 엔진이 호출하는 계약 코드이며, 지금 단계에서는 로컬 연습과 공개 저장소 코드로만 확인합니다.
+- 기기 등록 확인 자체는 ALEPH SDP 엔진(반 엔진·릴레이)이 `decide()`를 부르기 전에 먼저 처리합니다. 학생 코드는 그 결과값(`deviceRegistered`)을 받아 판정하는 계약 함수만 구현하며, `api/notes.js` 등 서버 함수에 별도의 기기 등록 검사를 직접 만들어 넣지 않습니다(계약에 없는 `request.device`류 값을 지어내지 말라는 AGENTS.md 규칙과 같은 이유).
 
 ### 확인 순서 (6단계)
 1. 이 확인에는 별도로 설치할 접속 프로그램이 없습니다. 저장소를 받은 뒤 `npm install`로 준비된 상태 그대로 실행합니다.
