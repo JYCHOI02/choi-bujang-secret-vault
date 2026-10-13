@@ -148,6 +148,32 @@
    → `정상 사건: allow`, `복합 이상 사건: step_up`
 5. 미등록 기기·위조 접속 신호로 실제 자료실을 공격해 거부를 증명하는 일은 학생이 할 필요가 없습니다 — 심판이 맡아 확인합니다.
 
+## 8단계: 자료마다 갈 수 있는 구역을 나눕니다
+
+- `src/decider.mjs`가 `request.route`를 정확히(부분일치 없이) 알려진 경로 목록과 대조해 조회 구역(`GET`)과 쓰기 구역(`POST`/`PUT`/`DELETE`)으로 나누고, 기기 ID·주체 ID의 모양도 함께 검사합니다. 목록에 없는 경로는 `deny`·`route_not_allowlisted`로 거부합니다.
+- 쓰기 구역은 조회 구역보다 낮은 이상 신호 문턱(3개 중 2개만 겹쳐도)에서 재확인(`step_up`·`write_zone_step_up_required`)을 요구합니다. 조회 구역은 7단계와 동일하게 3개 모두 겹쳐야 합니다.
+- 메모(`notes`)와 다른 자원인 **강사 공지**를 별도 경로·테이블(`GET /api/announcements`, `announcements` 테이블)로 분리했습니다. 소유자가 없는 공용 읽기 자료이며, `route` 값(`GET /announcements` vs `GET /notes/:id`)으로 서버가 두 자원을 구별합니다.
+- 자료 API(`/api/notes`, `/api/announcements`) 모두에서, 화면 메뉴나 요청 본문·쿼리의 `role`(강사 등 권한 주장)을 신뢰하지 않고 `403`·`ROLE_NOT_TRUSTED`로 거부합니다. 메모 목록 조회는 DB 쿼리의 소유자 필터만 믿지 않고 반환 직전 각 행의 소유자를 한 번 더 대조합니다.
+
+### 확인 순서 (8단계)
+1. 별도로 설치할 접속 프로그램은 없습니다.
+2. 실행:
+   ```bash
+   npm run decider:test
+   ```
+3. 정상 결과 (일곱 개 모두 `통과`): 6·7단계 점검 네 개에 더해
+   - `통과 · 등록되지 않은 경로` — 목록에 없는 `route` → `deny`·`route_not_allowlisted`
+   - `통과 · 쓰기 구역의 약한 이상 접속` — 신호 2개만 겹쳐도 → `step_up`·`write_zone_step_up_required`
+   - `통과 · 다시 확인한 쓰기 구역 접속` — 신선한 재인증 뒤 → `allow`
+4. 참고 연습: `npm run fixture:7` → `정상 사건: allow`, `복합 이상 사건: step_up` (조회 구역 동작 불변 확인)
+5. 자료 API의 role 미신뢰·소유자 재대조는 배포된 주소에서 직접 확인합니다(로컬 자동 시험 없음):
+   ```bash
+   curl.exe -i -X PUT "<publicAppUrl>/api/notes/<내 메모 id>" -H "Authorization: Bearer <내 토큰>" -H "Content-Type: application/json" -d "{\"title\":\"t\",\"body\":\"b\",\"role\":\"instructor\"}"
+   curl.exe -i "<publicAppUrl>/api/announcements?role=instructor" -H "Authorization: Bearer <내 토큰>"
+   ```
+   정상 결과: 둘 다 `403`, `{"error":"ROLE_NOT_TRUSTED"}`.
+6. Supabase SQL Editor에서 `schema.sql`의 8단계 부분(`announcements` 테이블 생성·RLS·실습용 가상 공지 1건)을 미리 실행해 둬야 5번이 동작합니다.
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
