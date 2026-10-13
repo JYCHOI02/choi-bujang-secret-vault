@@ -23,17 +23,32 @@ export async function checkDecider({ decide, ruleIds }) {
       || !ruleIds.includes('device_registered')) {
     throw new Error('6단계 device_registered 규칙을 먼저 구현하고 RULE_IDS에 적어 주세요.');
   }
-  const { normal, suspicious } = fixtureRequests();
+  const { normal, suspicious, writeAnomaly } = fixtureRequests();
   const checks = [
     { name: '등록 기기의 정상 요청', request: normal, decision: 'allow' },
     { name: '미등록 기기의 가상 요청', request: { ...normal, requestId: randomUUID(),
       deviceRegistered: false }, decision: 'deny', reasonCode: 'device_not_registered' },
   ];
+  if (ruleIds.includes('resource_zone_verified')) {
+    checks.push(
+      { name: '등록되지 않은 경로', request: { ...normal, requestId: randomUUID(),
+        route: 'GET /admin', path: '/admin' }, decision: 'deny', reasonCode: 'route_not_allowlisted' },
+    );
+  }
   if (ruleIds.includes('step_up_required')) {
     checks.push(
       { name: '복합 이상 접속', request: suspicious, decision: 'step_up',
         reasonCode: 'step_up_required' },
       { name: '다시 확인한 복합 이상 접속', request: { ...suspicious,
+        requestId: randomUUID(), stepUp: { verified: true, authAgeSeconds: 60 } },
+      decision: 'allow' },
+    );
+  }
+  if (ruleIds.includes('write_zone_step_up')) {
+    checks.push(
+      { name: '쓰기 구역의 약한 이상 접속', request: writeAnomaly, decision: 'step_up',
+        reasonCode: 'write_zone_step_up_required' },
+      { name: '다시 확인한 쓰기 구역 접속', request: { ...writeAnomaly,
         requestId: randomUUID(), stepUp: { verified: true, authAgeSeconds: 60 } },
       decision: 'allow' },
     );

@@ -1,6 +1,33 @@
 // ALEPH SDP 엔진이 확인한 요청만 받는 학생 판정기입니다.
 // 요청 본문의 userId, role, 기기 키, 토큰을 별도로 믿거나 저장하지 마세요.
-export const RULE_IDS = Object.freeze(['device_registered', 'signals_verified', 'step_up_required']);
+export const RULE_IDS = Object.freeze([
+  'device_registered', 'resource_zone_verified', 'signals_verified',
+  'step_up_required', 'write_zone_step_up',
+]);
+
+// request.route는 엔진이 정규화한 모양(예: 'GET /notes/:id')이며 /api 접두사가 없습니다.
+// aleph.config.json.allowedRoutes(접두사 있음)에서 /api를 뗀 값과 같아야 하며, 두 목록은
+// 저장점마다 손으로 맞춥니다. 조회(GET)와 쓰기(POST/PUT/DELETE)를 구역으로 나눕니다.
+const ZONE_BY_ROUTE = Object.freeze({
+  'GET /notes': 'read',
+  'GET /notes/:id': 'read',
+  'POST /notes': 'write',
+  'PUT /notes/:id': 'write',
+  'DELETE /notes/:id': 'write',
+});
+
+const DEVICE_ID_SHAPE = /^[0-9a-f]{16}$/u;
+
+// 자원 경로가 구역 목록에 정확히(부분일치 없이) 있는지, 메서드가 그 경로와 맞는지,
+// 기기·주체 ID의 모양이 올바른지만 봅니다. 목록에 없는 경로는 구역이 없는 것으로
+// 취급해 거부합니다.
+function zoneForRoute(request) {
+  const zone = ZONE_BY_ROUTE[request.route];
+  if (!zone || request.method !== request.route.split(' ')[0]) return null;
+  if (typeof request.deviceId !== 'string' || !DEVICE_ID_SHAPE.test(request.deviceId)) return null;
+  if (typeof request.subjectId !== 'string' || request.subjectId.length === 0) return null;
+  return zone;
+}
 
 // 계약(docs/DECIDER_REQUEST.md)에 명시된 출처만 신뢰합니다. 'none'은 엔진이 위치·네트워크를
 // 아직 확인하지 못한 실제 경로, 'judge_fixture'는 심판의 로컬 연습 신호입니다. 둘 다 실제
@@ -40,14 +67,14 @@ function hasFreshStepUp(stepUp) {
   return Number.isInteger(stepUp.authAgeSeconds) && stepUp.authAgeSeconds >= 0 && stepUp.authAgeSeconds <= 900;
 }
 
-// 평소와 다른 시각(밤 10시~아침 6시)과 처음 보는 네트워크('unusual')가 함께 나타나고,
-// 짧은 시간 안에 많은 자료를 읽은 사건(최근 사건 중 하나라도 5분 이내 10건 이상)이
-// 겹칠 때만 복합 이상 접속으로 봅니다. 지역(region) 하나만으로는 이 판정에 쓰지 않습니다.
-function isCompoundAnomaly(signals, recentEvents) {
+// 평소와 다른 시각(밤 10시~아침 6시), 처음 보는 네트워크('unusual'), 짧은 시간 안에 많은
+// 자료를 읽은 사건(최근 사건 중 하나라도 5분 이내 10건 이상) — 이 세 신호 중 몇 개가
+// 겹치는지 셉니다(0~3). 지역(region) 하나만으로는 이 판정에 쓰지 않습니다.
+function anomalyCount(signals, recentEvents) {
   const unusualHour = signals.hour >= 22 || signals.hour < 6;
   const unfamiliarNetwork = signals.network === 'unusual';
   const suddenHeavyRead = recentEvents.some((event) => event.count >= 10 && event.ageSeconds <= 300);
-  return unusualHour && unfamiliarNetwork && suddenHeavyRead;
+  return [unusualHour, unfamiliarNetwork, suddenHeavyRead].filter(Boolean).length;
 }
 
 export async function decide(request) {
@@ -60,6 +87,16 @@ export async function decide(request) {
       ruleIds: ['device_registered'],
     };
   }
+  const zone = zoneForRoute(request);
+  if (!zone) {
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request.requestId,
+      decision: 'deny',
+      reasonCode: 'route_not_allowlisted',
+      ruleIds: ['resource_zone_verified'],
+    };
+  }
   if (!hasValidSignals(request.signals) || !hasValidRecentEvents(request.recentEvents)) {
     return {
       schema: 'aleph.decision.v1',
@@ -69,23 +106,33 @@ export async function decide(request) {
       ruleIds: ['signals_verified'],
     };
   }
-  const anomaly = isCompoundAnomaly(request.signals, request.recentEvents);
-  if (anomaly && !hasFreshStepUp(request.stepUp)) {
-    return {
-      schema: 'aleph.decision.v1',
-      requestId: request.requestId,
-      decision: 'step_up',
-      reasonCode: 'step_up_required',
-      ruleIds: ['step_up_required'],
-    };
+  // 쓰기 구역(자료 추가·수정·삭제)은 조회보다 낮은 문턱(신호 2개)에서 재확인을 요구합니다.
+  const anomalies = anomalyCount(request.signals, request.recentEvents);
+  const needsStepUp = anomalies >= (zone === 'write' ? 2 : 3);
+  if (needsStepUp && !hasFreshStepUp(request.stepUp)) {
+    return zone === 'write'
+      ? {
+        schema: 'aleph.decision.v1',
+        requestId: request.requestId,
+        decision: 'step_up',
+        reasonCode: 'write_zone_step_up_required',
+        ruleIds: ['write_zone_step_up'],
+      }
+      : {
+        schema: 'aleph.decision.v1',
+        requestId: request.requestId,
+        decision: 'step_up',
+        reasonCode: 'step_up_required',
+        ruleIds: ['step_up_required'],
+      };
   }
+  const ruleIds = ['device_registered', 'resource_zone_verified', 'signals_verified'];
+  if (needsStepUp) ruleIds.push(zone === 'write' ? 'write_zone_step_up' : 'step_up_required');
   return {
     schema: 'aleph.decision.v1',
     requestId: request.requestId,
     decision: 'allow',
     reasonCode: 'approved',
-    ruleIds: anomaly
-      ? ['device_registered', 'signals_verified', 'step_up_required']
-      : ['device_registered', 'signals_verified'],
+    ruleIds,
   };
 }

@@ -11,11 +11,17 @@ const request = (signals, recentEvents) => ({
   at: new Date().toISOString(), policyRevision: 1, deviceRegistered: true,
   stepUp: { verified: false, authAgeSeconds: null }, recentEvents, signals,
 });
+// 8단계: 쓰기 구역(POST /notes) 가상 요청. writeAnomaly는 이상 신호 2개(시각+네트워크)만
+// 겹치고 다량 읽기 사건은 없어, 조회 구역이라면 재확인이 필요 없는 수준입니다.
+const writeRequest = (signals) => ({ ...request(signals, []), method: 'POST', path: '/notes', route: 'POST /notes' });
+
 export function fixtureRequests() {
   return {
     normal: request({ source: 'judge_fixture', region: 'local', network: 'usual', hour: 14 }, []),
     suspicious: request({ source: 'judge_fixture', region: 'foreign', network: 'unusual', hour: 3 },
       [{ kind: 'risk_signal', ageSeconds: 60, count: 20 }]),
+    writeNormal: writeRequest({ source: 'judge_fixture', region: 'local', network: 'usual', hour: 14 }),
+    writeAnomaly: writeRequest({ source: 'judge_fixture', region: 'foreign', network: 'unusual', hour: 3 }),
   };
 }
 const check = (input, output) => output && typeof output === 'object'
