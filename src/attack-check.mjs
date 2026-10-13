@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -57,7 +57,7 @@ export async function runAttackChecks(config) {
     } catch {}
   }
 
-  if (config.step === 4 || config.step === 5) {
+  if (config.step === 4 || config.step === 5 || config.step === 6) {
     return [
       {
         attackId: 'anonymous_static_data_read',
@@ -74,7 +74,12 @@ export async function runAttackChecks(config) {
           : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
       },
       ...(await ownerChecks(app)),
-      ...(config.step === 5 ? [await originalApiCheck(config)] : []),
+      ...(config.step === 5 || config.step === 6 ? [await originalApiCheck(config)] : []),
+      ...(config.step === 6 ? [{
+        attackId: 'device_not_registered',
+        expected: '미등록 기기의 접근 거부는 ALEPH SDP 엔진(릴레이)이 decide() 호출 전에 처리함',
+        observed: '미실행: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
+      }] : []),
     ];
   }
 
