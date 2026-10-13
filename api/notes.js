@@ -34,6 +34,12 @@ function triesToSetOwner(body, userId) {
   return false;
 }
 
+// 화면 메뉴나 요청 본문의 role(강사 등 권한 주장)은 신뢰하지 않습니다. 소유자 판정은
+// 오직 검증된 토큰의 사용자 ID와 DB의 owner_id 비교로만 정합니다.
+function claimsRole(body) {
+  return !!body && Object.prototype.hasOwnProperty.call(body, 'role');
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
@@ -103,6 +109,9 @@ export default async function handler(request, response) {
         if (triesToSetOwner(body, userId)) {
           return response.status(403).json({ error: 'OWNER_CHANGE_FORBIDDEN' });
         }
+        if (claimsRole(body)) {
+          return response.status(403).json({ error: 'ROLE_NOT_TRUSTED' });
+        }
         if (typeof body.title !== 'string' || typeof body.body !== 'string') {
           return response.status(400).json({ error: 'INVALID_BODY' });
         }
@@ -165,7 +174,7 @@ export default async function handler(request, response) {
     if (method === 'GET') {
       const { data, error } = await supabase
         .from('notes')
-        .select('id, title, content')
+        .select('id, title, content, owner_id')
         .eq('owner_id', userId)
         .order('id', { ascending: true });
 
@@ -173,13 +182,18 @@ export default async function handler(request, response) {
         return response.status(500).json({ error: 'DATABASE_QUERY_ERROR' });
       }
 
-      return response.status(200).json((data || []).map(toNote));
+      // 조회 질의의 필터만 믿지 않고, 반환 직전 각 행의 소유자를 다시 대조합니다.
+      const owned = (data || []).filter((row) => row.owner_id === userId);
+      return response.status(200).json(owned.map(toNote));
     }
 
     if (method === 'POST') {
       const body = await parseBody(request);
       if (triesToSetOwner(body, userId)) {
         return response.status(403).json({ error: 'OWNER_CHANGE_FORBIDDEN' });
+      }
+      if (claimsRole(body)) {
+        return response.status(403).json({ error: 'ROLE_NOT_TRUSTED' });
       }
       const noteId = body.id || randomUUID();
       const title = body.title ?? '';

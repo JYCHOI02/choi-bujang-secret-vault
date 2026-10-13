@@ -45,6 +45,13 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
+  // 화면 메뉴나 쿼리의 role·owner_id(강사 권한 주장)는 신뢰하지 않습니다. 공지는 소유자가
+  // 없는 공용 읽기 자료이며, 접근 권한은 오직 검증된 로그인 여부로만 정합니다.
+  if (Object.prototype.hasOwnProperty.call(request.query ?? {}, 'role')
+      || Object.prototype.hasOwnProperty.call(request.query ?? {}, 'owner_id')) {
+    return response.status(403).json({ error: 'ROLE_NOT_TRUSTED' });
+  }
+
   const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
