@@ -106,6 +106,23 @@
 2. **제출 묶음과 자기 점검**: `npm run bundle` — 4단계 점검에 더해 원본 자료 API를 공개 키로 직접 요청한 결과(`original_api_anon_read`)를 기록합니다.
 3. **원본 직접 요청 수동 확인**: `curl.exe -i "<originalApiUrl>" -H "apikey: <public/index.html의 공개 키>"` → 거부(401/403, `42501`)가 정상입니다.
 
+## 6단계: 등록한 기기만 자료실에 들어옵니다 (진행 중)
+
+- `src/decider.mjs`에 `device_registered` 규칙을 추가해, 요청의 `deviceRegistered`가 `true`일 때만 허용(`allow`)하고, `false`이거나 값이 없으면 `deny`·`device_not_registered`로 거부합니다 (`docs/DECIDER_REQUEST.md` 계약 기준).
+- 이 판정기는 아직 배포된 `/api/notes` 요청에 직접 연결되어 있지 않습니다. 반 엔진이 호출하는 계약 코드이며, 지금 단계에서는 로컬 연습과 공개 저장소 코드로만 확인합니다.
+
+### 확인 순서 (6단계)
+1. 이 확인에는 별도로 설치할 접속 프로그램이 없습니다. 저장소를 받은 뒤 `npm install`로 준비된 상태 그대로 실행합니다.
+2. 실행:
+   ```bash
+   npm run decider:test
+   ```
+3. 정상 결과 (둘 다 `통과`여야 합니다):
+   - `통과 · 등록 기기의 정상 요청` — `deviceRegistered: true` → `allow`
+   - `통과 · 미등록 기기의 가상 요청` — `deviceRegistered: false` → `deny`, `reasonCode: device_not_registered`
+4. 마지막 줄 "이 명령은 가상 요청으로 연습하며 심판 통과 증거가 아닙니다"가 그대로 출력되는지 확인합니다 — 이 연습이 실제 심판 판정이 아니라는 뜻입니다.
+5. 미등록 기기로 실제 자료실을 공격해 거부를 증명하는 일은 학생이 할 필요가 없습니다 — 심판이 맡아 확인합니다.
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
