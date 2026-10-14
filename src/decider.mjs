@@ -2,7 +2,7 @@
 // 요청 본문의 userId, role, 기기 키, 토큰을 별도로 믿거나 저장하지 마세요.
 export const RULE_IDS = Object.freeze([
   'device_registered', 'resource_zone_verified', 'signals_verified',
-  'step_up_required', 'write_zone_step_up',
+  'step_up_required', 'write_zone_step_up', 'network_burst_suspected',
 ]);
 
 // request.route는 엔진이 정규화한 모양(예: 'GET /notes/:id')이며 /api 접두사가 없습니다.
@@ -87,6 +87,16 @@ function anomalyCount(signals, recentEvents) {
   return [unusualHour, unfamiliarNetwork, suddenHeavyRead].filter(Boolean).length;
 }
 
+// 처음 보는 네트워크('unusual')와 갑작스러운 다량 조회(최근 사건 중 하나라도 5분 이내
+// 10건 이상)가 함께 나타날 때만 의심으로 봅니다. 시각은 보지 않고, 지역(region) 하나만
+// 으로는 판단하지 않습니다. 둘 중 하나만 있으면 이 규칙은 걸리지 않고 정상 사건 그대로
+// 둡니다.
+function hasNetworkBurstSuspicion(signals, recentEvents) {
+  const unfamiliarNetwork = signals.network === 'unusual';
+  const suddenHeavyRead = recentEvents.some((event) => event.count >= 10 && event.ageSeconds <= 300);
+  return unfamiliarNetwork && suddenHeavyRead;
+}
+
 export async function decide(request) {
   if (request.deviceRegistered !== true) {
     return {
@@ -118,26 +128,37 @@ export async function decide(request) {
   }
   // 쓰기 구역(자료 추가·수정·삭제)은 조회보다 낮은 문턱(신호 2개)에서 재확인을 요구합니다.
   const anomalies = anomalyCount(request.signals, request.recentEvents);
-  const needsStepUp = anomalies >= (zone === 'write' ? 2 : 3);
-  if (needsStepUp && !hasFreshStepUp(request.stepUp)) {
-    return zone === 'write'
-      ? {
-        schema: 'aleph.decision.v1',
-        requestId: request.requestId,
-        decision: 'step_up',
-        reasonCode: 'write_zone_step_up_required',
-        ruleIds: ['write_zone_step_up'],
-      }
-      : {
-        schema: 'aleph.decision.v1',
-        requestId: request.requestId,
-        decision: 'step_up',
-        reasonCode: 'step_up_required',
-        ruleIds: ['step_up_required'],
-      };
+  const zoneStepUp = anomalies >= (zone === 'write' ? 2 : 3);
+  const networkBurst = hasNetworkBurstSuspicion(request.signals, request.recentEvents);
+  if ((zoneStepUp || networkBurst) && !hasFreshStepUp(request.stepUp)) {
+    if (zoneStepUp) {
+      return zone === 'write'
+        ? {
+          schema: 'aleph.decision.v1',
+          requestId: request.requestId,
+          decision: 'step_up',
+          reasonCode: 'write_zone_step_up_required',
+          ruleIds: ['write_zone_step_up'],
+        }
+        : {
+          schema: 'aleph.decision.v1',
+          requestId: request.requestId,
+          decision: 'step_up',
+          reasonCode: 'step_up_required',
+          ruleIds: ['step_up_required'],
+        };
+    }
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request.requestId,
+      decision: 'step_up',
+      reasonCode: 'network_burst_suspected',
+      ruleIds: ['network_burst_suspected'],
+    };
   }
   const ruleIds = ['device_registered', 'resource_zone_verified', 'signals_verified'];
-  if (needsStepUp) ruleIds.push(zone === 'write' ? 'write_zone_step_up' : 'step_up_required');
+  if (zoneStepUp) ruleIds.push(zone === 'write' ? 'write_zone_step_up' : 'step_up_required');
+  if (networkBurst) ruleIds.push('network_burst_suspected');
   return {
     schema: 'aleph.decision.v1',
     requestId: request.requestId,

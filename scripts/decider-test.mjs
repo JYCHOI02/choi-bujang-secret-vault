@@ -23,7 +23,7 @@ export async function checkDecider({ decide, ruleIds }) {
       || !ruleIds.includes('device_registered')) {
     throw new Error('6단계 device_registered 규칙을 먼저 구현하고 RULE_IDS에 적어 주세요.');
   }
-  const { normal, suspicious, writeAnomaly } = fixtureRequests();
+  const { normal, suspicious, writeAnomaly, networkBurst, networkOnly } = fixtureRequests();
   const checks = [
     { name: '등록 기기의 정상 요청', request: normal, decision: 'allow' },
     { name: '미등록 기기의 가상 요청', request: { ...normal, requestId: randomUUID(),
@@ -57,6 +57,13 @@ export async function checkDecider({ decide, ruleIds }) {
       { name: '다시 확인한 쓰기 구역 접속', request: { ...writeAnomaly,
         requestId: randomUUID(), stepUp: { verified: true, authAgeSeconds: 60 } },
       decision: 'allow' },
+    );
+  }
+  if (ruleIds.includes('network_burst_suspected')) {
+    checks.push(
+      { name: '네트워크+다량 조회 복합 의심(시각은 정상)', request: networkBurst, decision: 'step_up',
+        reasonCode: 'network_burst_suspected' },
+      { name: '네트워크만 다른 정상 사건', request: networkOnly, decision: 'allow' },
     );
   }
   const results = [];

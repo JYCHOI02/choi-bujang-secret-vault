@@ -22,6 +22,13 @@ export function fixtureRequests() {
       [{ kind: 'risk_signal', ageSeconds: 60, count: 20 }]),
     writeNormal: writeRequest({ source: 'judge_fixture', region: 'local', network: 'usual', hour: 14 }),
     writeAnomaly: writeRequest({ source: 'judge_fixture', region: 'foreign', network: 'unusual', hour: 3 }),
+    // 9단계: 평소와 다른 네트워크 + 갑작스런 다량 조회만 겹치는 조회 요청(시각은 정상).
+    // 시각까지 포함해야 걸리는 7단계 문턱(3/3)은 넘지 않지만, 네트워크+조회량 둘만 보는
+    // 새 규칙에는 걸려야 합니다.
+    networkBurst: request({ source: 'judge_fixture', region: 'local', network: 'unusual', hour: 14 },
+      [{ kind: 'risk_signal', ageSeconds: 60, count: 20 }]),
+    // 네트워크만 다르고 조회량은 정상 — 단일 신호라 정상 사건으로 그대로 남아야 합니다.
+    networkOnly: request({ source: 'judge_fixture', region: 'local', network: 'unusual', hour: 14 }, []),
   };
 }
 const check = (input, output) => output && typeof output === 'object'
