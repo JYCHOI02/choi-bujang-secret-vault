@@ -6,13 +6,16 @@ export const RULE_IDS = Object.freeze([
 ]);
 
 // request.route는 엔진이 정규화한 모양(예: 'GET /notes/:id')이며 /api 접두사가 없습니다.
-// aleph.config.json.allowedRoutes(접두사 있음)에서 /api를 뗀 값과 같아야 하며, 두 목록은
-// 저장점마다 손으로 맞춥니다. 조회(GET)와 쓰기(POST/PUT/DELETE)를 구역으로 나눕니다.
 // service는 route와 따로 오는 계약 값이라, route 모양만 맞고 service가 다른 자원을
 // 가리키는 "구역이 섞인" 요청(예: route는 메모인데 service는 공지)을 route만으로는
 // 잡아내지 못합니다 — 그래서 각 route가 속한 service도 함께 적어 둡니다.
+// 메모 전체 목록(GET /notes, :id 없음)은 일부러 넣지 않습니다 — 판정기는 자원 한 건의
+// 소유자를 알 방법이 없어서, 여러 사람의 자료를 한꺼번에 여는 모양의 경로는 애초에
+// 허용 목록에 두지 않습니다. 자원 한 건(:id 있음)만 API의 소유자 검사와 함께 허용합니다.
+// aleph.config.json.allowedRoutes(/api 접두사 있음, 실제 배포 경로)와는 더 이상 1:1로
+// 같지 않습니다 — 그 목록은 배포된 API 자체의 경로이고, 이 목록은 판정기가 추가로
+// 더 좁혀 허용하는 구역입니다.
 const ZONE_BY_ROUTE = Object.freeze({
-  'GET /notes': { zone: 'read', service: 'notes' },
   'GET /notes/:id': { zone: 'read', service: 'notes' },
   'POST /notes': { zone: 'write', service: 'notes' },
   'PUT /notes/:id': { zone: 'write', service: 'notes' },

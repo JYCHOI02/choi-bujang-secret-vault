@@ -36,6 +36,9 @@ export async function checkDecider({ decide, ruleIds }) {
       { name: '구역이 섞인 요청(route는 메모, service는 공지)', request: { ...normal,
         requestId: randomUUID(), service: 'announcements' },
       decision: 'deny', reasonCode: 'route_not_allowlisted' },
+      { name: '메모 전체 목록 경로(여러 사람의 자료를 한꺼번에 여는 모양)', request: { ...normal,
+        requestId: randomUUID(), method: 'GET', path: '/notes', route: 'GET /notes' },
+      decision: 'deny', reasonCode: 'route_not_allowlisted' },
     );
   }
   if (ruleIds.includes('step_up_required')) {
