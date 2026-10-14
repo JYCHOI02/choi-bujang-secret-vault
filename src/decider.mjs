@@ -23,6 +23,10 @@ const ZONE_BY_ROUTE = Object.freeze({
   // 강사 공지(announcements)는 메모(notes)와 다른 자원입니다. 소유자가 없는
   // 공용 읽기 자료라 조회 구역과 같은 문턱을 쓰지만, route·service로 메모와 구별됩니다.
   'GET /announcements': { zone: 'read', service: 'announcements' },
+  // 10단계: 백업에서 메모 한 건을 되살리는 복원 경로도 다른 쓰기(추가·수정·삭제)와
+  // 같은 쓰기 구역·문턱을 씁니다. 실제 복원 자격(백업의 소유자·지문 대조)은
+  // src/note-restore.mjs가 확인하며, 이 표는 구역 분류만 담당합니다.
+  'POST /notes/:id/restore': { zone: 'write', service: 'notes' },
 });
 
 const DEVICE_ID_SHAPE = /^[0-9a-f]{16}$/u;

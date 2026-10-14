@@ -200,6 +200,35 @@
 4. 참고 연습: `npm run fixture:7` → `정상 사건: allow`, `복합 이상 사건: step_up` (기존 동작 불변 확인)
 5. 둘 다 가상 요청으로 하는 로컬 연습입니다 — 실제 접속 회수나 심판 판정으로 보고하지 않습니다.
 
+## 10단계: 백업에서 자료실을 되살립니다
+
+- `src/decider.mjs`의 `ZONE_BY_ROUTE`에 `POST /notes/:id/restore`(서비스 `notes`, 쓰기 구역)를 등록하고, `aleph.config.json`의 `allowedRoutes`에 실제 배포 경로 `POST /api/notes/:id/restore`를 추가했습니다. 다른 쓰기(추가·수정·삭제)와 같은 쓰기 구역 재확인 문턱을 씁니다.
+- **정책 비교·복원** (`scripts/restore-check.mjs`, `scripts/restore-apply.mjs`): 침해 전에 검증한 안전 정책 사본(`docs/policy-backup/policy.json`+ `policy.sha256`)과 현재 `aleph.config.json`의 `allowedRoutes`·`src/decider.mjs`의 `RULE_IDS`를 대조해 차이만 보여줍니다. 사본이 없거나 지문이 사본 내용과 다르면 어떤 차이도 보여주지 않고 중단합니다. 실제 적용(`restore:apply`)은 표시된 백업 버전을 `--confirm-version`으로 다시 넣어야만 진행되며, `allowedRoutes`만 되돌리고 다른 설정 필드·코드는 그대로 둡니다. 결과는 `docs/policy-backup/audit-log.jsonl`에 추가만 됩니다(기존 줄 보존).
+- **메모 한 건 복원** — 서비스 `notes`, 경로 `POST /api/notes/:id/restore`: 비공개 백업 테이블 `notes_backup`에서 그 id의 사본만 찾아, 사본의 소유자가 요청자 본인과 같고 내용 지문(`content_sha256`)이 사본 내용과 일치할 때만 `notes` 테이블의 그 행 하나만 되돌립니다(`src/note-restore.mjs`). 다른 메모 행은 건드리지 않고, 성공·중단 모두 `restore_audit` 테이블에 한 줄만 추가합니다. 요청 본문의 제목·내용은 읽지 않습니다 — 복원되는 내용은 오직 검증된 백업에서만 옵니다.
+
+### 10단계 현재 작동하는 기능
+1. **정책 비교·거부**: 백업 사본이 없거나 지문이 안 맞으면 `restore:check`·`restore:apply` 모두 차이를 보여주지 않고 중단합니다.
+2. **정책 복원 확인 절차**: `restore:apply`는 `restore:check`로 본 백업 버전을 그대로 다시 넣을 때만 `allowedRoutes`를 되돌리며, 그 외 설정과 코드는 보존합니다.
+3. **메모 한 건 복원과 감사 기록**: `POST /api/notes/:id/restore`는 ID·소유자·내용 지문이 모두 사본과 같을 때만 그 메모 한 건을 되돌리고, 다른 메모와 기존 감사 기록은 보존합니다.
+
+### 확인 순서 (10단계)
+1. 단위 시험 실행:
+   ```bash
+   npm run test:restore
+   npm run test:note-restore
+   ```
+   정상 결과: 둘 다 모두 통과(`pass`).
+2. 정책 비교(지금은 진짜 백업이 없는 상태이므로 거부가 정상 결과입니다):
+   ```bash
+   npm run restore:check
+   ```
+   정상 결과: `중단 · 검증된 정책 백업 사본(docs/policy-backup/policy.json)이 없습니다.`
+3. Supabase SQL Editor에서 `schema.sql`의 10단계 부분(`notes_backup`, `restore_audit` 테이블 생성)을 먼저 실행해야 메모 복원 경로가 동작합니다.
+4. 메모 복원은 배포된 주소에서 시험 계정 B의 메모로만 확인합니다(계정 이메일은 저장소에 적지 않습니다):
+   - B로 로그인한 뒤, B의 메모 사본 한 건을 `notes_backup`에 미리 넣어 둡니다(실습용 가상 내용만, `content_sha256`은 `title`·`content`의 SHA-256 지문).
+   - 정상 결과: `curl.exe -i -X POST "<publicAppUrl>/api/notes/<그 메모 id>/restore" -H "Authorization: Bearer <B의 토큰>"` → 200, 응답 본문의 제목·내용이 백업 사본과 같음.
+   - 거부돼야 할 결과: 백업이 없는 id로 같은 요청 → 404 `BACKUP_NOT_FOUND`(존재 여부를 알리지 않음). 이 복원 뒤에도 B의 다른 메모 조회·수정은 그대로 동작해야 합니다.
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
