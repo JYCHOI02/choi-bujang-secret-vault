@@ -229,6 +229,49 @@
    - 정상 결과: `curl.exe -i -X POST "<publicAppUrl>/api/notes/<그 메모 id>/restore" -H "Authorization: Bearer <B의 토큰>"` → 200, 응답 본문의 제목·내용이 백업 사본과 같음.
    - 거부돼야 할 결과: 백업이 없는 id로 같은 요청 → 404 `BACKUP_NOT_FOUND`(존재 여부를 알리지 않음). 이 복원 뒤에도 B의 다른 메모 조회·수정은 그대로 동작해야 합니다.
 
+### 복구 뒤 1~9단계 재확인 순서
+
+정책 복원(`restore:apply`)이나 메모 복원(`POST /api/notes/:id/restore`)을 실제로 적용한 뒤에는, 자료·정책이 돌아왔는지와 이전에 막던 요청이 다시 거부되는지를 아래 순서로 1~9단계 것부터 다시 확인합니다. 상태는 실제로 그 항목을 실행했을 때만 `통과`/`실패`로 바꾸고, 아직 실행하지 않은 항목은 `미실행`으로 남겨 둡니다 — 실행하지 않은 결과를 통과로 적지 않습니다. (1단계는 최초 배포 확인이라 복구 후 재확인 대상에서 제외합니다.)
+
+1. **2단계 — 가상 메모 노출 차단** (상태: 미실행)
+   ```powershell
+   git grep "실습용 가상" HEAD -- ':!schema.sql'
+   curl.exe -i https://<배포주소>/data.json
+   ```
+   정상 결과: 첫 명령은 아무것도 찾지 못함, 둘째 명령은 `HTTP 404 Not Found`.
+2. **3~4단계 — 로그인과 소유자 분리** (상태: 미실행)
+   ```bash
+   npm run test:r5
+   ```
+   + 브라우저 수동 시험: A로 로그인해 B 메모 ID로 GET·PUT·DELETE.
+   정상 결과: `test:r5` 통과. 거부돼야 할 결과: B 메모 접근 → 404, 내 메모의 `owner_id` 변경 시도 → 403.
+3. **5단계 — 원본 자료 직접 접근 차단** (상태: 미실행)
+   ```bash
+   curl.exe -i "<originalApiUrl>" -H "apikey: <public/index.html의 공개 키>"
+   ```
+   거부돼야 할 결과: 401/403, `42501`.
+4. **6~7단계 — 기기 등록과 접속 신호 판정** (상태: 미실행)
+   ```bash
+   npm run decider:test
+   npm run fixture:7
+   ```
+   정상 결과: `decider:test` 네 개 모두 통과(등록 기기 `allow`, 미등록 기기 `deny`, 복합 이상 접속 `step_up`, 재인증 뒤 `allow`). `fixture:7`: 정상 사건 `allow`, 복합 이상 사건 `step_up`.
+5. **8단계 — 구역·role 분리** (상태: 미실행)
+   ```bash
+   npm run decider:test
+   curl.exe -i -X PUT "<publicAppUrl>/api/notes/<내 메모 id>" -H "Authorization: Bearer <내 토큰>" -H "Content-Type: application/json" -d "{\"title\":\"t\",\"body\":\"b\",\"role\":\"instructor\"}"
+   curl.exe -i "<publicAppUrl>/api/announcements?role=instructor" -H "Authorization: Bearer <내 토큰>"
+   ```
+   정상 결과: `decider:test` 아홉 개 모두 통과. 거부돼야 할 결과: curl 두 개 모두 `403`, `{"error":"ROLE_NOT_TRUSTED"}`.
+6. **9단계 — 도플갱어 탐지와 접속 재확인** (상태: 미실행)
+   ```bash
+   npm run detect:test
+   npm run decider:test
+   ```
+   정상 결과: `detect:test` 여섯 개 모두 통과(폭주 조회만 `propose_revocation`·`burst_read`). `decider:test` 열한 개 모두 통과(네트워크+다량조회 복합 → `step_up`, 네트워크만 다른 정상 사건 → `allow`).
+
+위 1~6번이 전부 `통과`로 바뀌어야 "자료와 정책이 돌아오고 이전에 막던 요청이 다시 거부된다"를 확인한 것입니다. 지금은 전부 `미실행` 상태입니다.
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
