@@ -17,9 +17,41 @@ function readEvent(event) {
   return { sub: identity.sub, method: event.method, at: event.at };
 }
 
+// docs/DETECT_EVENTS.md 기준: 같은 가명 사용자(sub)의 GET 사건이 어느 10분 구간에서든
+// 120건을 넘을 때만 그 사용자를 회수 후보로 봅니다. 정확히 120건은 포함하지 않고,
+// 다른 사용자의 사건을 합치거나 10분 밖의 사건을 같은 구간으로 세지 않습니다.
+const BURST_WINDOW_MS = 10 * 60 * 1000;
+const BURST_THRESHOLD = 120;
+
+function burstReadSubjects(readable) {
+  const bySub = new Map();
+  for (const event of readable) {
+    if (event.method !== 'GET') continue;
+    const list = bySub.get(event.sub) ?? [];
+    list.push(Date.parse(event.at));
+    bySub.set(event.sub, list);
+  }
+  const triggered = [];
+  for (const [sub, timesRaw] of bySub) {
+    const times = [...timesRaw].sort((a, b) => a - b);
+    let windowStart = 0;
+    let maxInWindow = 0;
+    for (let index = 0; index < times.length; index += 1) {
+      while (times[index] - times[windowStart] >= BURST_WINDOW_MS) windowStart += 1;
+      maxInWindow = Math.max(maxInWindow, index - windowStart + 1);
+    }
+    if (maxInWindow > BURST_THRESHOLD) triggered.push(sub);
+  }
+  return triggered;
+}
+
 export function detect(events) {
   if (!Array.isArray(events)) throw new TypeError('invalid_detection_events');
-  // 판정 로직은 아직 없습니다 — 이번 단계는 입력을 안전하게 읽는 부분만 채웁니다.
-  events.forEach(readEvent);
-  return { action: 'observe' };
+  const readable = events.map(readEvent);
+  const triggered = burstReadSubjects(readable);
+  if (triggered.length === 0) return { action: 'observe' };
+  // 대상은 확인된 가상 사용자(기기) 한 개로 한정합니다. 실제 회수 집행·시각은
+  // 심판이 처리하며, 이 함수는 제안만 돌려줍니다 — 회수 API를 직접 부르거나
+  // 기기 권한을 여기서 바꾸지 않습니다.
+  return { action: 'propose_revocation', reasonCode: 'burst_read', subject: triggered[0] };
 }
