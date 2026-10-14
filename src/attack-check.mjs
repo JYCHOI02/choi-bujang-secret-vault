@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -58,7 +58,7 @@ export async function runAttackChecks(config) {
   }
 
   if (config.step === 4 || config.step === 5 || config.step === 6 || config.step === 7
-      || config.step === 8 || config.step === 9) {
+      || config.step === 8 || config.step === 9 || config.step === 10) {
     return [
       {
         attackId: 'anonymous_static_data_read',
@@ -76,24 +76,25 @@ export async function runAttackChecks(config) {
       },
       ...(await ownerChecks(app)),
       ...(config.step === 5 || config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9
+          || config.step === 10
         ? [await originalApiCheck(config)] : []),
-      ...(config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9 ? [{
+      ...(config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10 ? [{
         attackId: 'device_not_registered',
         expected: '미등록 기기의 접근 거부는 ALEPH SDP 엔진(릴레이)이 decide() 호출 전에 처리함',
         observed: '미실행: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
       }] : []),
-      ...(config.step === 7 || config.step === 8 || config.step === 9 ? [{
+      ...(config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10 ? [{
         attackId: 'step_up_required',
         expected: '평소와 다른 시각·처음 보는 네트워크·갑작스런 다량 읽기가 겹치면 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
-      ...(config.step === 8 || config.step === 9 ? [{
+      ...(config.step === 8 || config.step === 9 || config.step === 10 ? [{
         attackId: 'write_zone_step_up',
         expected: '쓰기 구역(POST/PUT/DELETE)은 조회보다 낮은 이상 신호 문턱에서 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 구역 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
-      ...(config.step === 8 || config.step === 9 ? [await anonymousAnnouncementsCheck(app)] : []),
-      ...(config.step === 9 ? [{
+      ...(config.step === 8 || config.step === 9 || config.step === 10 ? [await anonymousAnnouncementsCheck(app)] : []),
+      ...(config.step === 9 || config.step === 10 ? [{
         attackId: 'network_burst_suspected',
         expected: '처음 보는 네트워크와 갑작스런 다량 조회가 함께 나타나면 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
@@ -102,6 +103,7 @@ export async function runAttackChecks(config) {
         expected: '같은 가명 사용자의 10분 내 121건 초과 조회는 회수 제안(propose_revocation)으로 이어짐',
         observed: '미실행: detect()는 로컬 연습 함수일 뿐 운영 반 엔진의 사건 전달·접속 회수와 연결돼 있지 않으며, 심판이 직접 확인함',
       }] : []),
+      ...(config.step === 10 ? [await anonymousRestoreCheck(app)] : []),
     ];
   }
 
@@ -231,6 +233,22 @@ async function anonymousAnnouncementsCheck(app) {
     observed: visible
       ? '비로그인 API 요청에서 가상 공지 목록이 반환됨 (HTTP 200)'
       : `비로그인 API 요청이 정상 거부됨 (HTTP ${response.status})`,
+  };
+}
+
+// 10단계: 메모 복원(POST /api/notes/:id/restore)도 로그인이 필요합니다. 비로그인 요청이
+// 401로 거부되는지만 자동으로 확인합니다 — 실제 복원 실행은 로그인 토큰과 사본이 필요해
+// 자동 점검에서 제외합니다(브라우저·curl 수동 시험 대상, README 10단계 참고).
+async function anonymousRestoreCheck(app) {
+  const expected = '비로그인 요청으로 메모 복원(POST /api/notes/:id/restore)을 호출하면 401로 거부되어야 함';
+  const response = await fetch(new URL('/api/notes/00000000-0000-4000-8000-000000000000/restore', app), {
+    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  return {
+    attackId: 'anonymous_restore_attempt', expected,
+    observed: response.status === 401
+      ? '비로그인 복원 요청이 정상 거부됨 (HTTP 401)'
+      : `비로그인 복원 요청이 401이 아님 (HTTP ${response.status})`,
   };
 }
 
