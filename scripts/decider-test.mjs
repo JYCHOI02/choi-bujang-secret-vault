@@ -33,6 +33,9 @@ export async function checkDecider({ decide, ruleIds }) {
     checks.push(
       { name: '등록되지 않은 경로', request: { ...normal, requestId: randomUUID(),
         route: 'GET /admin', path: '/admin' }, decision: 'deny', reasonCode: 'route_not_allowlisted' },
+      { name: '구역이 섞인 요청(route는 메모, service는 공지)', request: { ...normal,
+        requestId: randomUUID(), service: 'announcements' },
+      decision: 'deny', reasonCode: 'route_not_allowlisted' },
     );
   }
   if (ruleIds.includes('step_up_required')) {

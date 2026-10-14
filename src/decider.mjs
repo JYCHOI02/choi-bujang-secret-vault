@@ -8,28 +8,32 @@ export const RULE_IDS = Object.freeze([
 // request.route는 엔진이 정규화한 모양(예: 'GET /notes/:id')이며 /api 접두사가 없습니다.
 // aleph.config.json.allowedRoutes(접두사 있음)에서 /api를 뗀 값과 같아야 하며, 두 목록은
 // 저장점마다 손으로 맞춥니다. 조회(GET)와 쓰기(POST/PUT/DELETE)를 구역으로 나눕니다.
+// service는 route와 따로 오는 계약 값이라, route 모양만 맞고 service가 다른 자원을
+// 가리키는 "구역이 섞인" 요청(예: route는 메모인데 service는 공지)을 route만으로는
+// 잡아내지 못합니다 — 그래서 각 route가 속한 service도 함께 적어 둡니다.
 const ZONE_BY_ROUTE = Object.freeze({
-  'GET /notes': 'read',
-  'GET /notes/:id': 'read',
-  'POST /notes': 'write',
-  'PUT /notes/:id': 'write',
-  'DELETE /notes/:id': 'write',
+  'GET /notes': { zone: 'read', service: 'notes' },
+  'GET /notes/:id': { zone: 'read', service: 'notes' },
+  'POST /notes': { zone: 'write', service: 'notes' },
+  'PUT /notes/:id': { zone: 'write', service: 'notes' },
+  'DELETE /notes/:id': { zone: 'write', service: 'notes' },
   // 강사 공지(announcements)는 메모(notes)와 다른 자원입니다. 소유자가 없는
-  // 공용 읽기 자료라 조회 구역과 같은 문턱을 쓰지만, route로 메모와 구별됩니다.
-  'GET /announcements': 'read',
+  // 공용 읽기 자료라 조회 구역과 같은 문턱을 쓰지만, route·service로 메모와 구별됩니다.
+  'GET /announcements': { zone: 'read', service: 'announcements' },
 });
 
 const DEVICE_ID_SHAPE = /^[0-9a-f]{16}$/u;
 
 // 자원 경로가 구역 목록에 정확히(부분일치 없이) 있는지, 메서드가 그 경로와 맞는지,
-// 기기·주체 ID의 모양이 올바른지만 봅니다. 목록에 없는 경로는 구역이 없는 것으로
-// 취급해 거부합니다.
+// service가 그 경로의 실제 자원과 일치하는지, 기기·주체 ID의 모양이 올바른지를 봅니다.
+// 목록에 없는 경로나 service가 섞인 요청은 구역이 없는 것으로 취급해 거부합니다.
 function zoneForRoute(request) {
-  const zone = ZONE_BY_ROUTE[request.route];
-  if (!zone || request.method !== request.route.split(' ')[0]) return null;
+  const entry = ZONE_BY_ROUTE[request.route];
+  if (!entry || request.method !== request.route.split(' ')[0]) return null;
+  if (request.service !== entry.service) return null;
   if (typeof request.deviceId !== 'string' || !DEVICE_ID_SHAPE.test(request.deviceId)) return null;
   if (typeof request.subjectId !== 'string' || request.subjectId.length === 0) return null;
-  return zone;
+  return entry.zone;
 }
 
 // 계약(docs/DECIDER_REQUEST.md)에 명시된 출처만 신뢰합니다. 'none'은 엔진이 위치·네트워크를
