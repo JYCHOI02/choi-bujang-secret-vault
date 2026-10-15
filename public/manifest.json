@@ -1,0 +1,18 @@
+{
+  "name": "BYTE BACK 가상 자료실",
+  "short_name": "가상 자료실",
+  "description": "실습용 가상 자료실 접속 화면입니다. 설치 여부와 기기 확인은 서로 다릅니다.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101a28",
+  "theme_color": "#101a28",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
