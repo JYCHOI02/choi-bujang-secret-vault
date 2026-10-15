@@ -44,7 +44,15 @@ export async function restoreNote({ supabase, noteId, requesterId }) {
     .select('id, title, content, owner_id')
     .maybeSingle();
 
-  if (writeError || !restored || restored.owner_id !== backup.owner_id) {
+  const restoredFingerprint = restored
+    ? contentFingerprint(restored.title, restored.content)
+    : null;
+  const writeMatchesBackup = restored
+    && String(restored.id) === String(backup.note_id)
+    && restored.owner_id === backup.owner_id
+    && restoredFingerprint === backup.content_sha256;
+
+  if (writeError || !writeMatchesBackup) {
     await appendAudit(supabase, { noteId, action: 'aborted', reason: 'write_failed' });
     return { ok: false, status: 500, error: 'RESTORE_WRITE_FAILED' };
   }
