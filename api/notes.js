@@ -41,9 +41,10 @@ function claimsRole(body) {
   return !!body && Object.prototype.hasOwnProperty.call(body, 'role');
 }
 
-// 본인이 정상적으로 저장(생성·수정)한 내용을 침해 전 복원 지점으로 남깁니다
-// (src/note-restore.mjs가 나중에 이 사본으로 되돌립니다). 실패해도 지금 저장
-// 자체는 이미 끝났으므로 응답을 막지 않습니다.
+// 본인이 정상적으로 생성한 최초 내용을 침해 전 복원 지점으로 남깁니다
+// (src/note-restore.mjs가 나중에 이 사본으로 되돌립니다). 이미 사본이 존재하면
+// 덮어쓰지 않으며(ignoreDuplicates), 수정(PUT) 시에도 백업을 갱신하지 않아
+// 침해 공격으로 본문이 변조되더라도 안전한 최초 사본을 온전히 보존합니다.
 async function captureBackup(supabase, { noteId, ownerId, title, content }) {
   await supabase.from('notes_backup').upsert({
     note_id: noteId,
@@ -51,7 +52,7 @@ async function captureBackup(supabase, { noteId, ownerId, title, content }) {
     title,
     content,
     content_sha256: contentFingerprint(title, content),
-  }, { onConflict: 'note_id' });
+  }, { onConflict: 'note_id', ignoreDuplicates: true });
 }
 
 export default async function handler(request, response) {
@@ -158,10 +159,6 @@ export default async function handler(request, response) {
         if (data.owner_id !== userId) {
           return response.status(500).json({ error: 'OWNER_MISMATCH' });
         }
-
-        await captureBackup(supabase, {
-          noteId: data.id, ownerId: data.owner_id, title: data.title, content: data.content,
-        });
 
         return response.status(200).json(toNote(data));
       }
