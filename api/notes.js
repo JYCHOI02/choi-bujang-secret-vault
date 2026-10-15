@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../src/verify-login.mjs';
+import { contentFingerprint } from '../src/content-fingerprint.mjs';
 
 let verifyLogin = null;
 function getVerifier(supabaseSecretKey) {
@@ -38,6 +39,19 @@ function triesToSetOwner(body, userId) {
 // 오직 검증된 토큰의 사용자 ID와 DB의 owner_id 비교로만 정합니다.
 function claimsRole(body) {
   return !!body && Object.prototype.hasOwnProperty.call(body, 'role');
+}
+
+// 본인이 정상적으로 저장(생성·수정)한 내용을 침해 전 복원 지점으로 남깁니다
+// (src/note-restore.mjs가 나중에 이 사본으로 되돌립니다). 실패해도 지금 저장
+// 자체는 이미 끝났으므로 응답을 막지 않습니다.
+async function captureBackup(supabase, { noteId, ownerId, title, content }) {
+  await supabase.from('notes_backup').upsert({
+    note_id: noteId,
+    owner_id: ownerId,
+    title,
+    content,
+    content_sha256: contentFingerprint(title, content),
+  }, { onConflict: 'note_id' });
 }
 
 export default async function handler(request, response) {
@@ -145,6 +159,10 @@ export default async function handler(request, response) {
           return response.status(500).json({ error: 'OWNER_MISMATCH' });
         }
 
+        await captureBackup(supabase, {
+          noteId: data.id, ownerId: data.owner_id, title: data.title, content: data.content,
+        });
+
         return response.status(200).json(toNote(data));
       }
 
@@ -211,6 +229,8 @@ export default async function handler(request, response) {
       if (error) {
         return response.status(500).json({ error: 'DATABASE_INSERT_ERROR', details: error.message });
       }
+
+      await captureBackup(supabase, { noteId, ownerId: userId, title, content });
 
       return response.status(200).json({ id: String(noteId) });
     }

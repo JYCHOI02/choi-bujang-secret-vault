@@ -1,8 +1,4 @@
-import { createHash } from 'node:crypto';
-
-function contentFingerprint(title, content) {
-  return createHash('sha256').update(`${title}\u0000${content}`, 'utf8').digest('hex');
-}
+import { contentFingerprint } from './content-fingerprint.mjs';
 
 async function appendAudit(supabase, { noteId, action, reason }) {
   await supabase.from('restore_audit').insert({ note_id: noteId, action, reason: reason ?? null });
