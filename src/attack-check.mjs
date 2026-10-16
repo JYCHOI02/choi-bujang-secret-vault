@@ -85,19 +85,19 @@ export async function runAttackChecks(config) {
           || config.step === 11 || config.step === 12 ? [{
         attackId: 'device_not_registered',
         expected: '미등록 기기의 접근 거부는 ALEPH SDP 엔진(릴레이)이 decide() 호출 전에 처리함',
-        observed: '미실행: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
+        observed: 'not_run: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
       }] : []),
       ...(config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10
           || config.step === 11 || config.step === 12 ? [{
         attackId: 'step_up_required',
         expected: '평소와 다른 시각·처음 보는 네트워크·갑작스런 다량 읽기가 겹치면 재확인(step_up)을 요구함',
-        observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
+        observed: 'not_run: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
       ...(config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11
           || config.step === 12 ? [{
         attackId: 'write_zone_step_up',
         expected: '쓰기 구역(POST/PUT/DELETE)은 조회보다 낮은 이상 신호 문턱에서 재확인(step_up)을 요구함',
-        observed: '미실행: 이 배포 서버 함수는 decide()의 구역 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
+        observed: 'not_run: 이 배포 서버 함수는 decide()의 구역 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
       ...(config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11
           || config.step === 12
@@ -105,11 +105,11 @@ export async function runAttackChecks(config) {
       ...(config.step === 9 || config.step === 10 || config.step === 11 || config.step === 12 ? [{
         attackId: 'network_burst_suspected',
         expected: '처음 보는 네트워크와 갑작스런 다량 조회가 함께 나타나면 재확인(step_up)을 요구함',
-        observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
+        observed: 'not_run: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }, {
         attackId: 'burst_read',
         expected: '같은 가명 사용자의 10분 내 121건 초과 조회는 회수 제안(propose_revocation)으로 이어짐',
-        observed: '미실행: detect()는 로컬 연습 함수일 뿐 운영 반 엔진의 사건 전달·접속 회수와 연결돼 있지 않으며, 심판이 직접 확인함',
+        observed: 'not_run: detect()는 로컬 연습 함수일 뿐 운영 반 엔진의 사건 전달·접속 회수와 연결돼 있지 않으며, 심판이 직접 확인함',
       }] : []),
       ...(config.step === 10 || config.step === 11 || config.step === 12 ? [await anonymousRestoreCheck()] : []),
       ...(config.step === 11 || config.step === 12
@@ -185,7 +185,7 @@ async function ownerChecks(app) {
   });
 
   if (!tokenA || !tokenB) {
-    const skipped = '미실행: ALEPH_CHECK_TOKEN_A/B 환경변수가 없어 로그인 요청을 보내지 않음';
+    const skipped = 'not_run: ALEPH_CHECK_TOKEN_A/B 환경변수가 없어 로그인 요청을 보내지 않음';
     results.push(
       { attackId: 'own_notes_read', expected: 'A·B는 각자 자기 메모 목록만 받아야 함', observed: skipped },
       { attackId: 'cross_owner_read', expected: 'A가 B 메모 ID로 단건 조회하면 404로 거부되어야 함', observed: skipped },
@@ -205,7 +205,7 @@ async function ownerChecks(app) {
     const target = listB.notes.find((note) => !idsA.has(String(note.id)));
     if (!target) {
       results.push({ attackId: 'cross_owner_read', expected: 'A가 B 메모 ID로 단건 조회하면 404로 거부되어야 함',
-        observed: '미실행: B 목록에서 A와 겹치지 않는 메모를 찾지 못함' });
+        observed: 'not_run: B 목록에서 A와 겹치지 않는 메모를 찾지 못함' });
     } else {
       const cross = await send(`/api/notes/${encodeURIComponent(String(target.id))}`, tokenA);
       results.push({
@@ -220,7 +220,7 @@ async function ownerChecks(app) {
   results.push({
     attackId: 'cross_owner_write',
     expected: 'A가 B 메모를 수정·삭제하거나 소유자를 바꾸면 404·403으로 거부되어야 함',
-    observed: '미실행: B 메모를 실제로 바꿀 수 있어 자동 점검에서 제외함 (브라우저 수동 시험 대상)',
+    observed: 'not_run: B 메모를 실제로 바꿀 수 있어 자동 점검에서 제외함 (브라우저 수동 시험 대상)',
   });
   return results;
 }
@@ -299,7 +299,7 @@ async function deviceApprovalCheck(app) {
   const token = process.env.ALEPH_CHECK_TOKEN_A;
   if (!token) {
     return { attackId: 'device_not_approved', expected,
-      observed: '미실행: ALEPH_CHECK_TOKEN_A 환경변수가 없어 로그인 요청을 보내지 않음' };
+      observed: 'not_run: ALEPH_CHECK_TOKEN_A 환경변수가 없어 로그인 요청을 보내지 않음' };
   }
   const response = await fetch(new URL('/api/notes', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
@@ -322,7 +322,7 @@ async function originalApiCheck(config) {
   let url;
   try { url = new URL(config.originalApiUrl); } catch { url = null; }
   if (!url || url.protocol !== 'https:' || url.search || url.hash) {
-    return { attackId: 'original_api_anon_read', expected, observed: '미실행: originalApiUrl이 쿼리 없는 HTTPS 주소가 아님' };
+    return { attackId: 'original_api_anon_read', expected, observed: 'not_run: originalApiUrl이 쿼리 없는 HTTPS 주소가 아님' };
   }
   let anonKey = '';
   try {
@@ -331,7 +331,7 @@ async function originalApiCheck(config) {
     anonKey = /['"](sb_publishable_[A-Za-z0-9_-]+)['"]/u.exec(html)?.[1] ?? '';
   } catch {}
   if (!anonKey) {
-    return { attackId: 'original_api_anon_read', expected, observed: '미실행: public/index.html에서 공개 키를 찾지 못함' };
+    return { attackId: 'original_api_anon_read', expected, observed: 'not_run: public/index.html에서 공개 키를 찾지 못함' };
   }
   const response = await fetch(url, {
     redirect: 'error', signal: AbortSignal.timeout(10000), headers: { apikey: anonKey },
