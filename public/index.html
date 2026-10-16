@@ -241,6 +241,21 @@
     <ul id="notes" aria-live="polite">
       <li>가상 자료를 불러오는 중입니다.</li>
     </ul>
+
+    <!-- 탈환 작전실: 판정기 규칙·탐지 사건·회수 상태는 코드에 구현됐을 뿐 이 배포의 실제
+         트래픽과 연결되지 않은 값이라 '미실행'으로 표시합니다. 복구 횟수만 실제 DB
+         기록(restore_audit)이라 '확인됨'으로 표시하며, 가상 메모 제목·내용은 어디에도
+         담지 않습니다. -->
+    <section id="ops-room" hidden>
+      <h2 style="margin: 24px 0 6px 0; font-size: 20px;">탈환 작전실</h2>
+      <p style="font-size:13px; color:#bfd0e5; margin:4px 0;">
+        판정기 규칙·탐지 사건·회수 상태는 "미실행(가상 연습)", 복구 횟수만 실제 서버 기록 기준 "확인됨"으로 구분해 보여줍니다. 메모 제목·내용은 표시하지 않습니다.
+      </p>
+      <div class="note-actions">
+        <button id="ops-refresh-btn" type="button" class="btn-sm btn-edit">작전실 새로고침</button>
+      </div>
+      <ul id="ops-summary" aria-live="polite"></ul>
+    </section>
   </main>
 
   <script type="module">
@@ -262,6 +277,9 @@
     const deviceGateNotice = document.querySelector('#device-gate-notice');
     const deviceRequestBtn = document.querySelector('#device-request-btn');
     const deviceRefreshBtn = document.querySelector('#device-refresh-btn');
+    const opsRoom = document.querySelector('#ops-room');
+    const opsSummaryEl = document.querySelector('#ops-summary');
+    const opsRefreshBtn = document.querySelector('#ops-refresh-btn');
 
     // 설치 여부 표시 (화면이 독립 실행 모드인지만 보여줌 — 기기 확인과는 다른 값)
     function updateInstallState() {
@@ -321,6 +339,7 @@
         logoutBtn.hidden = false;
         message.textContent = '';
         checkDeviceAndLoad(session.access_token);
+        loadOpsSummary(session.access_token);
       } else {
         loginState.textContent = '로그인하지 않음';
         loginForm.hidden = false;
@@ -329,8 +348,63 @@
         deviceGate.hidden = true;
         setDeviceState('로그인 전이라 아직 확인되지 않음');
         loadNotes(null);
+        loadOpsSummary(null);
       }
     }
+
+    // 탈환 작전실 한 줄을 만듭니다. 확인 상태(확인됨/미실행)와 그 근거를 함께 적어,
+    // 수치만 보고 실제 심판 판정으로 오해하지 않게 합니다.
+    function opsRow(label, verifiedLabel, detail) {
+      const row = document.createElement('li');
+      const title = document.createElement('strong');
+      title.textContent = `${label} — ${verifiedLabel}`;
+      const content = document.createElement('span');
+      content.textContent = detail;
+      row.append(title, content);
+      return row;
+    }
+
+    // 작전실 요약은 /api/ops-summary 응답만 그대로 보여줍니다. 가상 메모 제목·내용은
+    // 이 응답에 들어있지 않으므로 화면에도 나타나지 않습니다.
+    async function loadOpsSummary(token) {
+      if (!token) {
+        opsRoom.hidden = true;
+        opsSummaryEl.replaceChildren();
+        return;
+      }
+      opsRoom.hidden = false;
+      const loading = document.createElement('li');
+      loading.textContent = '작전실 자료를 불러오는 중입니다.';
+      opsSummaryEl.replaceChildren(loading);
+      try {
+        const res = await fetch('/api/ops-summary', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          opsSummaryEl.replaceChildren(opsRow('작전실 요약', '확인 불가', `서버 응답 실패 (HTTP ${res.status})`));
+          return;
+        }
+        const data = await res.json();
+        const restoreDetail = `적용 ${data.restore.appliedCount}건 · 중단 ${data.restore.abortedCount}건`
+          + (data.restore.lastAt ? ` · 최근: ${data.restore.lastAction} (${data.restore.lastAt})` : ' · 복구 기록 없음');
+        opsSummaryEl.replaceChildren(
+          opsRow('판정기 규칙', data.decider.verified === 'not_live' ? '미실행(가상 연습)' : '확인됨',
+            `구현된 규칙: ${data.decider.implementedRules.join(', ')} — ${data.decider.note}`),
+          opsRow('탐지 사건', data.detect.verified === 'not_live' ? '미실행(가상 연습)' : '확인됨',
+            `구현된 규칙: ${data.detect.implementedRule} — ${data.detect.note}`),
+          opsRow('회수 상태', data.revocation.verified === 'not_live' ? '미실행' : '확인됨', data.revocation.note),
+          opsRow('복구 버전(메모 복구 기록)', data.restore.verified === 'confirmed' ? '확인됨 (실제 서버 기록)' : '미실행',
+            restoreDetail),
+        );
+      } catch (err) {
+        opsSummaryEl.replaceChildren(opsRow('작전실 요약', '확인 불가', err.message));
+      }
+    }
+
+    opsRefreshBtn.addEventListener('click', () => {
+      if (currentSession?.access_token) loadOpsSummary(currentSession.access_token);
+    });
 
     // 승인 여부를 서버에 물어서만 정합니다(브라우저 저장소의 값은 쓰지 않음). 승인되지
     // 않았으면 자료실 화면(노트 폼·목록)을 비운 채 두고, /api/notes는 아예 부르지 않습니다.

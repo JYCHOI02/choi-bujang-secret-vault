@@ -283,6 +283,7 @@
 - 새 테이블 `device_approvals`(`schema.sql`)에 계정별 승인 여부(`approved`)만 둡니다. 기기별 개인키는 어디에도 만들거나 저장하지 않고, 로그인한 계정으로의 접속 전체를 하나의 승인 단위로 다룹니다.
 - `GET/POST /api/devices`(`api/devices.js`, `src/device-approval.mjs`)로 승인 상태를 확인하거나 승인을 요청합니다. `POST`는 대기 행만 만들 뿐 스스로 `approved`를 `true`로 바꾸지 않습니다 — 실제 승인은 Supabase 테이블에서 운영자가 직접 처리합니다.
 - `api/notes.js`가 응답 전에 같은 승인 여부를 다시 확인해, 승인되지 않은 계정은 로그인했어도 `403 DEVICE_NOT_APPROVED`로 거부합니다. 화면(`public/index.html`)도 승인 전에는 메모 폼·목록을 비우고 `/api/notes`를 아예 호출하지 않으며, "기기 접속 상태" 문구는 승인 상태 확인 결과와 이후 실제 메모 조회 결과를 그대로 반영합니다 — 승인 버튼 클릭만으로 화면이 열리지 않습니다.
+- 브라우저용 Supabase 클라이언트가 기본값(`persistSession`)으로 로그인 접속 토큰(refresh token 포함)을 `localStorage`에 남기고 있었습니다. 이 토큰도 "브라우저에 둔 기기 키"와 같은 문제라 `persistSession`·`autoRefreshToken`·`detectSessionInUrl`을 모두 끄고, 이전에 남아 있을 수 있는 `sb-*-auth-token` 값도 화면을 열 때 지웁니다. 그 결과 로그인은 매 접속마다 새로 합니다.
 
 ### 확인 순서 (11단계)
 1. Supabase SQL 편집기에서 `schema.sql`의 11단계 부분(`device_approvals` 테이블 생성)을 먼저 실행합니다.
@@ -295,6 +296,7 @@
 4. "기기 승인 요청" 클릭 → "승인 대기 중"으로 바뀌는지 확인합니다(거부돼야 할 결과: 이 클릭만으로 메모 목록이 열리면 문제입니다).
 5. Supabase 테이블 편집기에서 `device_approvals`의 내 `owner_id` 행 `approved`를 `true`로 바꾼 뒤, 화면에서 "승인 상태 다시 확인"을 클릭합니다. 정상 결과: "기기 접속 상태: 등록 기기로 확인됨" → 이어서 메모 목록이 기존처럼 정상 표시됩니다.
 6. 거부 확인(승인 전 상태에서): `curl.exe -i "<publicAppUrl>/api/notes" -H "Authorization: Bearer <내 토큰>"` → 거부돼야 할 결과: `403 {"error":"DEVICE_NOT_APPROVED"}`.
+7. 브라우저 저장소 확인: 로그인한 뒤 개발자 도구 → Application/저장소 탭에서 `localStorage`를 봅니다. 정상 결과: `sb-...-auth-token` 같은 항목이 생기지 않고, 새로고침하면 로그인 화면으로 돌아갑니다. 거부돼야 할 결과: 새로고침 뒤 로그인 없이 바로 기존 화면이 열림(토큰이 저장소에 남아있다는 뜻).
 
 ## 다음 단계의 코딩 도구에 전달할 규칙
 

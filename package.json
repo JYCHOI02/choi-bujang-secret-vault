@@ -15,7 +15,8 @@
     "restore:apply": "node scripts/restore-apply.mjs",
     "test:restore": "node --test test/restore-check.test.mjs test/restore-apply.test.mjs",
     "test:note-restore": "node --test test/note-restore.test.mjs",
-    "test:device-approval": "node --test test/device-approval.test.mjs"
+    "test:device-approval": "node --test test/device-approval.test.mjs",
+    "test:ops-summary": "node --test test/ops-summary.test.mjs"
   },
   "engines": {
     "node": ">=22"
