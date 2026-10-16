@@ -72,7 +72,14 @@ export async function checkDecider({ decide, ruleIds }) {
     const valid = validResponse(item.request, response, ruleIds)
       && response.decision === item.decision
       && (!item.reasonCode || response.reasonCode === item.reasonCode);
-    results.push({ name: item.name, passed: valid });
+    // requestId는 item.request에 실제로 들어있던 값(가상 연습용으로 만든 진짜 UUID)을
+    // 그대로 돌려줍니다 — 꾸며 만들지 않습니다. 기대/관측 값도 탈환 작전실 같은 보고
+    // 화면이 "미실행"과 실제로 실행해 본 결과를 구분할 수 있게 그대로 남깁니다.
+    results.push({
+      name: item.name, passed: valid, requestId: item.request.requestId,
+      expectedDecision: item.decision, expectedReasonCode: item.reasonCode ?? null,
+      observedDecision: response?.decision ?? null, observedReasonCode: response?.reasonCode ?? null,
+    });
   }
   return results;
 }

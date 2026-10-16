@@ -37,16 +37,29 @@ const check = (input, output) => output && typeof output === 'object'
   && ['allow', 'deny', 'step_up'].includes(output.decision)
   && typeof output.reasonCode === 'string' && Array.isArray(output.ruleIds);
 
+// 탈환 작전실 같은 보고 화면이 꾸미지 않은 실제 요청ID·기대/관측 값을 쓸 수 있도록,
+// CLI가 쓰는 두 가지 가상 사건 확인을 함수로도 내보냅니다. 동작은 바꾸지 않습니다.
+export async function runFixtureChecks(decide) {
+  const { normal, suspicious } = fixtureRequests();
+  const ordinary = await decide(normal);
+  const unusual = await decide(suspicious);
+  return [
+    { name: '정상 사건', requestId: normal.requestId, expectedDecision: 'allow',
+      observedDecision: ordinary?.decision ?? null,
+      passed: check(normal, ordinary) && ordinary.decision === 'allow' },
+    { name: '복합 이상 사건', requestId: suspicious.requestId, expectedDecision: 'step_up',
+      observedDecision: unusual?.decision ?? null,
+      passed: check(suspicious, unusual) && unusual.decision === 'step_up' },
+  ];
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const { normal, suspicious } = fixtureRequests();
     const { decide } = await import('../src/decider.mjs');
     if (typeof decide !== 'function') throw new Error('src/decider.mjs에서 decide 함수를 내보내야 합니다.');
-    const ordinary = await decide(normal);
-    const unusual = await decide(suspicious);
-    if (!check(normal, ordinary) || !check(suspicious, unusual)) throw new Error('판정기 응답 형식이 맞지 않습니다.');
-    process.stdout.write(`정상 사건: ${ordinary.decision}\n복합 이상 사건: ${unusual.decision}\n`);
-    if (ordinary.decision !== 'allow' || unusual.decision !== 'step_up') {
+    const results = await runFixtureChecks(decide);
+    process.stdout.write(`정상 사건: ${results[0].observedDecision}\n복합 이상 사건: ${results[1].observedDecision}\n`);
+    if (results.some((item) => !item.passed)) {
       throw new Error('정상 사건은 allow, 복합 이상 사건은 step_up이어야 합니다.');
     }
   } catch (error) {

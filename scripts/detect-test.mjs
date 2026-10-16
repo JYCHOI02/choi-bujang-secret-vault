@@ -33,7 +33,13 @@ export async function checkDetection(detect) {
   for (const item of cases) {
     const actual = await detect(item.events);
     const passed = isDeepStrictEqual(actual, item.expected);
-    results.push({ name: item.name, passed: Boolean(passed) });
+    // 가상 사건(events)의 계약에는 요청 ID가 없어 꾸며 넣지 않습니다 — 보고 화면은
+    // 이 경우 "요청ID 없음"으로 그대로 표시해야 합니다.
+    results.push({
+      name: item.name, passed: Boolean(passed),
+      expectedAction: item.expected.action, expectedReasonCode: item.expected.reasonCode ?? null,
+      observedAction: actual?.action ?? null, observedReasonCode: actual?.reasonCode ?? null,
+    });
   }
   return results;
 }
