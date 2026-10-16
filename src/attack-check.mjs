@@ -109,7 +109,7 @@ export async function runAttackChecks(config) {
         expected: '같은 가명 사용자의 10분 내 121건 초과 조회는 회수 제안(propose_revocation)으로 이어짐',
         observed: '미실행: detect()는 로컬 연습 함수일 뿐 운영 반 엔진의 사건 전달·접속 회수와 연결돼 있지 않으며, 심판이 직접 확인함',
       }] : []),
-      ...(config.step === 10 || config.step === 11 || config.step === 12 ? [await anonymousRestoreCheck(app)] : []),
+      ...(config.step === 10 || config.step === 11 || config.step === 12 ? [await anonymousRestoreCheck()] : []),
       ...(config.step === 11 || config.step === 12
         ? [await anonymousDevicesCheck(app), await deviceApprovalCheck(app)] : []),
       ...(config.step === 12 ? [await anonymousOpsSummaryCheck(app)] : []),
@@ -245,19 +245,15 @@ async function anonymousAnnouncementsCheck(app) {
   };
 }
 
-// 10단계: 메모 복원(POST /api/notes/:id/restore)도 로그인이 필요합니다. 비로그인 요청이
-// 401로 거부되는지만 자동으로 확인합니다 — 실제 복원 실행은 로그인 토큰과 사본이 필요해
-// 자동 점검에서 제외합니다(브라우저·curl 수동 시험 대상, README 10단계 참고).
-async function anonymousRestoreCheck(app) {
-  const expected = '비로그인 요청으로 메모 복원(POST /api/notes/:id/restore)을 호출하면 401로 거부되어야 함';
-  const response = await fetch(new URL('/api/notes/00000000-0000-4000-8000-000000000000/restore', app), {
-    method: 'POST', redirect: 'error', signal: AbortSignal.timeout(10000),
-  });
+// 10단계: 메모 복원(POST /api/notes/:id/restore)도 로그인이 필요합니다. 복원 경로는
+// 쓰기 요청(POST)이라 심판 채점 환경(격리 환경)에서는 아예 보내지 않습니다 — 그 환경은
+// 공개 HTTPS 주소로 GET·HEAD만 허용합니다. 비로그인 거부 확인은 README 10단계의 curl로
+// 직접 합니다(실제 복원 실행도 로그인 토큰과 사본이 필요해 자동 점검에서 제외).
+async function anonymousRestoreCheck() {
   return {
-    attackId: 'anonymous_restore_attempt', expected,
-    observed: response.status === 401
-      ? '비로그인 복원 요청이 정상 거부됨 (HTTP 401)'
-      : `비로그인 복원 요청이 401이 아님 (HTTP ${response.status})`,
+    attackId: 'anonymous_restore_attempt',
+    expected: '비로그인 요청으로 메모 복원(POST /api/notes/:id/restore)을 호출하면 401로 거부되어야 함',
+    observed: 'not_run: 쓰기 요청(POST)이라 격리 환경에서 보내지 않음 — README 10단계의 curl로 직접 확인',
   };
 }
 
