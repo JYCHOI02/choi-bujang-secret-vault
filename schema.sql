@@ -64,3 +64,17 @@ create table if not exists restore_audit (
 
 alter table restore_audit enable row level security;
 revoke select on table restore_audit from anon, authenticated;
+
+-- 11단계: 기기 승인 전에는 기존 자료실을 열지 않습니다. 승인 여부는 오직 이 테이블을
+-- 서버가 읽어서만 정하며, 기기별 개인키는 따로 발급하지 않고 이 계정(owner_id)으로의
+-- 접속 전체를 하나의 승인 단위로 다룹니다. approved는 기본값 false이며, 요청(POST)만으로
+-- 바뀌지 않습니다 — 실제 승인은 이 저장소 밖(운영자가 행을 직접 갱신)에서만 이루어집니다.
+create table if not exists device_approvals (
+  owner_id uuid primary key,
+  approved boolean not null default false,
+  requested_at timestamptz default timezone('utc'::text, now()) not null,
+  approved_at timestamptz
+);
+
+alter table device_approvals enable row level security;
+revoke select on table device_approvals from anon, authenticated;

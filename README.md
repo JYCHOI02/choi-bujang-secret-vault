@@ -277,9 +277,32 @@
 
 위 1~6번이 전부 `통과`로 바뀌어야 "자료와 정책이 돌아오고 이전에 막던 요청이 다시 거부된다"를 확인한 것입니다. 지금은 전부 `미실행` 상태입니다.
 
+## 11단계: 설치형 웹앱과 기기 승인 게이트
+
+- `public/manifest.json`·`public/icon.svg`로 설치형 웹앱(이름·아이콘·오프라인 안내)을 열 수 있게 했습니다. 화면의 "앱 설치 상태"는 독립 실행 모드 여부만 보여주며, 설치 여부와 기기 확인은 서로 다른 값임을 문구로 분리해 둡니다.
+- 새 테이블 `device_approvals`(`schema.sql`)에 계정별 승인 여부(`approved`)만 둡니다. 기기별 개인키는 어디에도 만들거나 저장하지 않고, 로그인한 계정으로의 접속 전체를 하나의 승인 단위로 다룹니다.
+- `GET/POST /api/devices`(`api/devices.js`, `src/device-approval.mjs`)로 승인 상태를 확인하거나 승인을 요청합니다. `POST`는 대기 행만 만들 뿐 스스로 `approved`를 `true`로 바꾸지 않습니다 — 실제 승인은 Supabase 테이블에서 운영자가 직접 처리합니다.
+- `api/notes.js`가 응답 전에 같은 승인 여부를 다시 확인해, 승인되지 않은 계정은 로그인했어도 `403 DEVICE_NOT_APPROVED`로 거부합니다. 화면(`public/index.html`)도 승인 전에는 메모 폼·목록을 비우고 `/api/notes`를 아예 호출하지 않으며, "기기 접속 상태" 문구는 승인 상태 확인 결과와 이후 실제 메모 조회 결과를 그대로 반영합니다 — 승인 버튼 클릭만으로 화면이 열리지 않습니다.
+
+### 확인 순서 (11단계)
+1. Supabase SQL 편집기에서 `schema.sql`의 11단계 부분(`device_approvals` 테이블 생성)을 먼저 실행합니다.
+2. 단위 시험 실행:
+   ```bash
+   npm run test:device-approval
+   ```
+   정상 결과: 6개 모두 통과(`pass`).
+3. 배포 사이트에서 로그인 → 승인 전: "기기 승인 필요" 블록만 보이고 메모 목록·추가 폼은 비어 있어야 합니다(정상 결과: 승인 전 자료 없음).
+4. "기기 승인 요청" 클릭 → "승인 대기 중"으로 바뀌는지 확인합니다(거부돼야 할 결과: 이 클릭만으로 메모 목록이 열리면 문제입니다).
+5. Supabase 테이블 편집기에서 `device_approvals`의 내 `owner_id` 행 `approved`를 `true`로 바꾼 뒤, 화면에서 "승인 상태 다시 확인"을 클릭합니다. 정상 결과: "기기 접속 상태: 등록 기기로 확인됨" → 이어서 메모 목록이 기존처럼 정상 표시됩니다.
+6. 거부 확인(승인 전 상태에서): `curl.exe -i "<publicAppUrl>/api/notes" -H "Authorization: Bearer <내 토큰>"` → 거부돼야 할 결과: `403 {"error":"DEVICE_NOT_APPROVED"}`.
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 1단계 이후 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 남아 있으며, 코딩 도구가 해당 단계의 최신 배포 주소와 Git 원격을 맞춘 뒤 사용합니다.
+
+## 알려진 불일치 (추후 확인 필요)
+
+`npm run test:package`가 실패 중입니다. `test/package-starter.test.mjs`는 `api/` 폴더에 `ai.js`, `threat-intel.js`만 있어야 한다고 기대하는데(`package/baseline-functions.json` 기준), 실제로는 8단계에서 추가한 `api/announcements.js`, `api/notes.js`가 함께 있어 불일치가 납니다. 이 책임은 8단계 이후부터 있었고 로그인·자료 보호 흐름(정상/거부 결과)과는 무관합니다. 패키징 기준표를 학생의 실제 API 구성에 맞게 갱신할지 결정이 필요합니다.
 

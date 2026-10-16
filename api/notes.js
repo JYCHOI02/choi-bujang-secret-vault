@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { createClient } from '@supabase/supabase-js';
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { contentFingerprint } from '../src/content-fingerprint.mjs';
+import { getDeviceApprovalStatus } from '../src/device-approval.mjs';
 
 let verifyLogin = null;
 function getVerifier(supabaseSecretKey) {
@@ -97,6 +98,16 @@ export default async function handler(request, response) {
   const supabase = createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
+
+  // 11단계: 승인되지 않은 기기(계정)는 로그인했어도 자료실을 열 수 없습니다. 화면의
+  // 승인 요청 버튼만으로는 이 값이 바뀌지 않으며, 매 요청마다 DB를 다시 읽어 정합니다.
+  const approval = await getDeviceApprovalStatus({ supabase, ownerId: userId });
+  if (!approval.ok) {
+    return response.status(approval.status).json({ error: approval.error });
+  }
+  if (!approval.approved) {
+    return response.status(403).json({ error: 'DEVICE_NOT_APPROVED' });
+  }
 
   const method = request.method;
   const toNote = (row) => ({ id: String(row.id), title: row.title, body: row.content ?? '' });

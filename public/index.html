@@ -225,6 +225,19 @@
     </form>
 
     <div class="notice">실습용 계정으로 로그인합니다. 실제 개인정보는 입력하지 마세요.</div>
+
+    <!-- 기기 승인 게이트: 승인 전에는 이 블록만 보이고, 보호 자료(/api/notes)는 요청조차
+         하지 않습니다. 승인 여부는 매번 서버에 물어서만 정하며, 버튼 클릭이 곧바로
+         화면을 열지 않습니다. -->
+    <div id="device-gate" hidden>
+      <h2 style="margin: 0 0 6px 0; font-size: 20px;">기기 승인 필요</h2>
+      <p id="device-gate-notice"></p>
+      <div class="note-actions">
+        <button id="device-request-btn" type="button">기기 승인 요청</button>
+        <button id="device-refresh-btn" type="button" class="btn-sm btn-edit">승인 상태 다시 확인</button>
+      </div>
+    </div>
+
     <ul id="notes" aria-live="polite">
       <li>가상 자료를 불러오는 중입니다.</li>
     </ul>
@@ -245,6 +258,10 @@
     const installState = document.querySelector('#install-state');
     const deviceState = document.querySelector('#device-state');
     const offlineNotice = document.querySelector('#offline-notice');
+    const deviceGate = document.querySelector('#device-gate');
+    const deviceGateNotice = document.querySelector('#device-gate-notice');
+    const deviceRequestBtn = document.querySelector('#device-request-btn');
+    const deviceRefreshBtn = document.querySelector('#device-refresh-btn');
 
     // 설치 여부 표시 (화면이 독립 실행 모드인지만 보여줌 — 기기 확인과는 다른 값)
     function updateInstallState() {
@@ -289,18 +306,82 @@
       if (session) {
         loginState.textContent = `로그인됨 (${session.user.email})`;
         loginForm.hidden = true;
-        noteForm.hidden = false;
+        noteForm.hidden = true;
         logoutBtn.hidden = false;
         message.textContent = '';
-        loadNotes(session.access_token);
+        checkDeviceAndLoad(session.access_token);
       } else {
         loginState.textContent = '로그인하지 않음';
         loginForm.hidden = false;
         noteForm.hidden = true;
         logoutBtn.hidden = true;
+        deviceGate.hidden = true;
+        setDeviceState('로그인 전이라 아직 확인되지 않음');
         loadNotes(null);
       }
     }
+
+    // 승인 여부를 서버에 물어서만 정합니다(브라우저 저장소의 값은 쓰지 않음). 승인되지
+    // 않았으면 자료실 화면(노트 폼·목록)을 비운 채 두고, /api/notes는 아예 부르지 않습니다.
+    async function checkDeviceAndLoad(token) {
+      setDeviceState('기기 승인 상태 확인 중');
+      noteForm.hidden = true;
+      list.replaceChildren();
+      try {
+        const res = await fetch('/api/devices', {
+          headers: { 'Authorization': `Bearer ${token}` },
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          setDeviceState(`승인 상태 확인 실패 (응답 코드 ${res.status})`);
+          deviceGate.hidden = false;
+          deviceGateNotice.textContent = '승인 상태를 서버에서 읽지 못했습니다. 다시 확인해 보세요.';
+          return;
+        }
+        const status = await res.json();
+        if (status.approved === true) {
+          deviceGate.hidden = true;
+          setDeviceState('등록 기기로 확인됨 (서버 승인)');
+          noteForm.hidden = false;
+          await loadNotes(token);
+        } else {
+          deviceGate.hidden = false;
+          setDeviceState(status.requested ? '승인 대기 중' : '미승인 (승인 요청 필요)');
+          deviceGateNotice.textContent = status.requested
+            ? '승인 요청을 이미 보냈습니다. 서버가 등록 기기로 확인하면 자료실이 열립니다.'
+            : '이 기기는 아직 등록되지 않았습니다. 승인을 요청한 뒤 서버 확인을 기다리세요.';
+        }
+      } catch (err) {
+        setDeviceState('확인 불가 (요청이 서버에 도달하지 못함)');
+        deviceGate.hidden = false;
+        deviceGateNotice.textContent = err.message;
+      }
+    }
+
+    deviceRequestBtn.addEventListener('click', async () => {
+      if (!currentSession?.access_token) return;
+      deviceRequestBtn.disabled = true;
+      try {
+        const res = await fetch('/api/devices', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${currentSession.access_token}` },
+          cache: 'no-store',
+        });
+        if (!res.ok) {
+          deviceGateNotice.textContent = `승인 요청 실패 (응답 코드 ${res.status})`;
+          return;
+        }
+        await checkDeviceAndLoad(currentSession.access_token);
+      } catch (err) {
+        deviceGateNotice.textContent = err.message;
+      } finally {
+        deviceRequestBtn.disabled = false;
+      }
+    });
+
+    deviceRefreshBtn.addEventListener('click', () => {
+      if (currentSession?.access_token) checkDeviceAndLoad(currentSession.access_token);
+    });
 
     // 로그인 폼 제출 처리 (공식 SDK 흐름)
     loginForm.addEventListener('submit', async (e) => {
