@@ -29,7 +29,9 @@ export async function runAttackChecks(config) {
       }
     }
     return [{ attackId: 'anonymous_note_read', expected: '비로그인 화면에서 가상 메모를 확인',
-      observed: visible ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임' : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
+      observed: visible
+        ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${response.status})`
+        : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
   }
 
   // 2단계 공격 점검
@@ -65,14 +67,14 @@ export async function runAttackChecks(config) {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
         observed: staticVisible
-          ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임'
+          ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${staticResponse.status})`
           : `정적 파일에서 가상 메모가 노출되지 않음 (HTTP ${staticResponse.status})`,
       },
       {
         attackId: 'anonymous_api_read',
         expected: '비로그인 API 요청(/api/notes) 시 가상 메모가 노출되지 않고 거부되어야 함',
         observed: apiVisible
-          ? '비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP 200)'
+          ? `비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP ${apiResponse.status})`
           : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
       },
       ...(await ownerChecks(app)),
@@ -122,14 +124,14 @@ export async function runAttackChecks(config) {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
         observed: staticVisible
-          ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임'
+          ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${staticResponse.status})`
           : `정적 파일에서 가상 메모가 노출되지 않음 (HTTP ${staticResponse.status})`,
       },
       {
         attackId: 'anonymous_api_read',
         expected: '비로그인 API 요청(/api/notes) 시 가상 메모가 노출되지 않고 거부되어야 함',
         observed: apiVisible
-          ? '비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP 200)'
+          ? `비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP ${apiResponse.status})`
           : `비로그인 API 요청이 정상 거부됨 (HTTP ${apiResponse.status})`,
       },
     ];
@@ -140,14 +142,14 @@ export async function runAttackChecks(config) {
       attackId: 'anonymous_static_data_read',
       expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
       observed: staticVisible
-        ? '비로그인 요청에서 공개 가상 메모 확인 표시가 보임'
+        ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${staticResponse.status})`
         : `정적 파일에서 가상 메모가 노출되지 않음 (HTTP ${staticResponse.status})`,
     },
     {
       attackId: 'anonymous_api_read',
       expected: '공개 서버 함수(/api/notes)를 통해 비로그인 상태로 가상 메모가 노출됨 (2단계 약점)',
       observed: apiVisible
-        ? '비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP 200)'
+        ? `비로그인 API 요청에서 가상 메모 목록이 반환됨 (HTTP ${apiResponse.status})`
         : `비로그인 API 요청에서 가상 메모를 읽을 수 없음 (HTTP ${apiResponse.status})`,
     },
   ];
@@ -197,7 +199,7 @@ async function ownerChecks(app) {
       attackId: 'own_notes_read',
       expected: 'A·B는 각자 자기 메모 목록만 받아야 함',
       observed: listA.status === 200 && listB.status === 200
-        ? `A ${listA.notes.length}건, B ${listB.notes.length}건, 서로 겹치는 메모 ${overlap ? '있음' : '없음'} (HTTP 200)`
+        ? `A ${listA.notes.length}건, B ${listB.notes.length}건, 서로 겹치는 메모 ${overlap ? '있음' : '없음'} (A HTTP ${listA.status}, B HTTP ${listB.status})`
         : `목록 요청 실패 (A HTTP ${listA.status}, B HTTP ${listB.status})`,
     });
     const target = listB.notes.find((note) => !idsA.has(String(note.id)));
@@ -240,7 +242,7 @@ async function anonymousAnnouncementsCheck(app) {
   return {
     attackId: 'anonymous_announcements_read', expected,
     observed: visible
-      ? '비로그인 API 요청에서 가상 공지 목록이 반환됨 (HTTP 200)'
+      ? `비로그인 API 요청에서 가상 공지 목록이 반환됨 (HTTP ${response.status})`
       : `비로그인 API 요청이 정상 거부됨 (HTTP ${response.status})`,
   };
 }
