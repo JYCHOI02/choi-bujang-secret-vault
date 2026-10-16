@@ -287,12 +287,23 @@
     window.addEventListener('online', updateOfflineNotice);
     window.addEventListener('offline', updateOfflineNotice);
 
+    // 세션(접속 토큰)을 브라우저 저장소에 남기지 않습니다 — 그 토큰도 "브라우저에 둔
+    // 기기 키"와 같은 문제라, 기본값(persistSession)을 켠 채로 두지 않습니다. 새로
+    // 열 때마다 다시 로그인하며, 아래에서 이전에 남아 있을 수 있는 값도 지웁니다.
+    try {
+      for (const key of Object.keys(window.localStorage)) {
+        if (key.startsWith('sb-') && key.endsWith('-auth-token')) window.localStorage.removeItem(key);
+      }
+    } catch {}
+
     let client = null;
     let initError = null;
     let currentSession = null;
     if (SUPABASE_PUBLISHABLE_KEY) {
       try {
-        client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        client = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
       } catch (err) {
         initError = err;
         message.textContent = `Supabase 클라이언트 초기화 오류: ${err.message}`;
