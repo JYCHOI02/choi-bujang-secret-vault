@@ -34,7 +34,9 @@ export async function runAttackChecks(config) {
         : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
   }
 
-  // 2단계 공격 점검
+  // 2단계 공격 점검. 1단계의 anonymous_note_read와 같은 요청(비로그인 GET /data.json)이라
+  // 응답을 다시 받아오지 않고 그대로 재사용합니다 — 매 제출마다(1단계 전용이 아니라) 이
+  // 점검 결과를 그대로 포함시킵니다.
   const staticResponse = await fetch(new URL('/data.json', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
   });
@@ -46,6 +48,12 @@ export async function runAttackChecks(config) {
         && data.notes.length > 0;
     } catch {}
   }
+  const anonymousNoteRead = {
+    attackId: 'anonymous_note_read', expected: '비로그인 화면에서 가상 메모를 확인',
+    observed: staticVisible
+      ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${staticResponse.status})`
+      : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${staticResponse.status})`,
+  };
 
   const apiResponse = await fetch(new URL('/api/notes', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
@@ -63,6 +71,7 @@ export async function runAttackChecks(config) {
       || config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11
       || config.step === 12) {
     return [
+      anonymousNoteRead,
       {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
@@ -114,12 +123,14 @@ export async function runAttackChecks(config) {
       ...(config.step === 10 || config.step === 11 || config.step === 12 ? [await anonymousRestoreCheck()] : []),
       ...(config.step === 11 || config.step === 12
         ? [await anonymousDevicesCheck(app), await deviceApprovalCheck(app)] : []),
-      ...(config.step === 12 ? [await anonymousOpsSummaryCheck(app)] : []),
+      ...(config.step === 12
+        ? [await anonymousOpsSummaryCheck(app), await opsSummaryAuthenticatedCheck(app)] : []),
     ];
   }
 
   if (config.step === 3) {
     return [
+      anonymousNoteRead,
       {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
@@ -138,6 +149,7 @@ export async function runAttackChecks(config) {
   }
 
   return [
+    anonymousNoteRead,
     {
       attackId: 'anonymous_static_data_read',
       expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
@@ -287,6 +299,34 @@ async function anonymousOpsSummaryCheck(app) {
     observed: response.status === 401
       ? '비로그인 작전실 요약 조회가 정상 거부됨 (HTTP 401)'
       : `비로그인 작전실 요약 조회가 401이 아님 (HTTP ${response.status})`,
+  };
+}
+
+// 12단계: 화면(탈환 작전실)의 수치가 가린 서버 기록과 맞는지, 인증된 요청으로 직접
+// /api/ops-summary를 불러 대조합니다. 응답을 그대로 적을 뿐 화면 값과 비교·계산하지
+// 않습니다 — 화면은 같은 API를 그대로 보여주므로 둘은 항상 같아야 합니다.
+async function opsSummaryAuthenticatedCheck(app) {
+  const expected = '로그인한 계정의 작전실 요약(/api/ops-summary)이 200으로 응답하고, 판정기·탐지·회수는 not_live, 복구 집계는 실제 DB 값이어야 함';
+  const token = process.env.ALEPH_CHECK_TOKEN_A;
+  if (!token) {
+    return { attackId: 'ops_summary_authenticated_read', expected,
+      observed: 'not_run: ALEPH_CHECK_TOKEN_A 환경변수가 없어 로그인 요청을 보내지 않음' };
+  }
+  const response = await fetch(new URL('/api/ops-summary', app), {
+    redirect: 'error', signal: AbortSignal.timeout(10000),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  let body = null;
+  try { body = await response.json(); } catch {}
+  if (response.status !== 200 || !body) {
+    return { attackId: 'ops_summary_authenticated_read', expected,
+      observed: `관찰된 응답: HTTP ${response.status}` };
+  }
+  return {
+    attackId: 'ops_summary_authenticated_read', expected,
+    observed: `인증된 요청 성공 (HTTP 200) · 판정기 verified=${body.decider?.verified} ·`
+      + ` 탐지 verified=${body.detect?.verified} · 회수 verified=${body.revocation?.verified} ·`
+      + ` 복구 적용 ${body.restore?.appliedCount}건·중단 ${body.restore?.abortedCount}건 (verified=${body.restore?.verified})`,
   };
 }
 
