@@ -298,9 +298,29 @@
 6. 거부 확인(승인 전 상태에서): `curl.exe -i "<publicAppUrl>/api/notes" -H "Authorization: Bearer <내 토큰>"` → 거부돼야 할 결과: `403 {"error":"DEVICE_NOT_APPROVED"}`.
 7. 브라우저 저장소 확인: 로그인한 뒤 개발자 도구 → Application/저장소 탭에서 `localStorage`를 봅니다. 정상 결과: `sb-...-auth-token` 같은 항목이 생기지 않고, 새로고침하면 로그인 화면으로 돌아갑니다. 거부돼야 할 결과: 새로고침 뒤 로그인 없이 바로 기존 화면이 열림(토큰이 저장소에 남아있다는 뜻).
 
+## 12단계: 탈환 작전실과 41종 연습 재현표
+
+- **탈환 작전실** (`GET /api/ops-summary`, `src/ops-summary.mjs`, 화면의 "탈환 작전실" 패널): 로그인한 계정에게 판정기 규칙·탐지 사건·회수 상태·복구 기록 네 가지를 보여줍니다. 판정기(`decider.mjs`)·탐지(`detect.mjs`)·회수 상태는 코드에 구현됐을 뿐 이 배포의 실제 트래픽과 연결되지 않아 항상 `verified: "not_live"`로 표시합니다. 복구 기록(적용/중단 건수)만 `notes_backup`→`restore_audit`를 실제로 조회해 `verified: "confirmed"`로 표시하며, 메모 제목·내용은 어디서도 읽지 않습니다.
+- **1~11단계 연습 재현표** (`scripts/recon-table.mjs`, `npm run recon:table`): `decider:test`(11)+`detect:test`(6)+`fixture:7`(2)+`test:r5`(2)+`test:restore`(10)+`test:note-restore`(4)+`test:device-approval`(6) = 41건을 지금 다시 실행해 단계·정상/금지·기대결과·실제결과·요청ID·확인시각 표를 만듭니다. 실행하지 않은 항목을 통과로 적지 않으며, 이 41건은 전부 로컬에서 바로 돌 수 있어 끝까지 실행되면 미실행이 0이어야 합니다.
+
+### 확인 순서 (12단계)
+1. 단위 시험 실행:
+   ```bash
+   npm run test:ops-summary
+   ```
+   정상 결과: 4개 모두 통과.
+2. 41종 재현표 실행:
+   ```bash
+   node scripts/recon-table.mjs
+   ```
+   정상 결과: 마지막 줄에 `총 41건 실행 (기대 41건) · 실패 0 · 미실행 0`.
+3. 거부 확인(비로그인): `curl.exe -i "<publicAppUrl>/api/ops-summary"` → 거부돼야 할 결과: `401 UNAUTHORIZED`.
+4. 배포 사이트에서 로그인 → "탈환 작전실" 패널 확인. 정상 결과: 판정기 규칙·탐지 사건·회수 상태는 "미실행(가상 연습)", 아직 복구해 본 적이 없으면 복구 항목은 "확인됨 (실제 서버 기록) · 적용 0건 · 중단 0건".
+5. 토큰이 있으면(`$env:ALEPH_CHECK_TOKEN_A`/`_B`) `node scripts/bundle.mjs`로 `own_notes_read`·`device_not_approved` 등 실제 배포 거부/허용도 함께 실측합니다(11단계 "운영 안내" 참고).
+
 ## 운영 안내: 학생 판정기·탐지 규칙·접속 앱·자료실 설치·실행·중지·복구
 
-이 절은 커밋 `a4fde1c`(2026-10-16, 1~11단계 반영) 기준으로 적습니다. 지금까지 토큰(A·B)으로 실제 배포에서 확인한 결과(`own_notes_read`·`device_not_approved`가 `403 DEVICE_NOT_APPROVED`로 실측됨)도 이 커밋 상태를 가리킵니다.
+이 절은 1~12단계가 반영된 「12단계 저장점」 커밋 기준으로 적습니다(정확한 커밋은 `git log -1` 참고). 지금까지 토큰(A·B)으로 실제 배포에서 확인한 결과(`own_notes_read`·`device_not_approved`가 `403 DEVICE_NOT_APPROVED`로 실측됨)도 그 커밋 상태를 가리킵니다.
 
 ### 누가 만들었는지 (학생 몫 vs 제공 엔진)
 
