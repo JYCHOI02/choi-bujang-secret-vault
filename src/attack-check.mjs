@@ -1,7 +1,7 @@
 // The student changes this check as each stage adds an attack to the same app.
 // Never return tokens, private keys, real names, or note bodies.
 export async function runAttackChecks(config) {
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(config.step)) throw new Error('이 단계의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   let app;
   try {
     app = new URL(config.publicAppUrl);
@@ -58,7 +58,7 @@ export async function runAttackChecks(config) {
   }
 
   if (config.step === 4 || config.step === 5 || config.step === 6 || config.step === 7
-      || config.step === 8 || config.step === 9 || config.step === 10) {
+      || config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11) {
     return [
       {
         attackId: 'anonymous_static_data_read',
@@ -76,25 +76,28 @@ export async function runAttackChecks(config) {
       },
       ...(await ownerChecks(app)),
       ...(config.step === 5 || config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9
-          || config.step === 10
+          || config.step === 10 || config.step === 11
         ? [await originalApiCheck(config)] : []),
-      ...(config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10 ? [{
+      ...(config.step === 6 || config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10
+          || config.step === 11 ? [{
         attackId: 'device_not_registered',
         expected: '미등록 기기의 접근 거부는 ALEPH SDP 엔진(릴레이)이 decide() 호출 전에 처리함',
         observed: '미실행: 이 배포 서버 함수는 기기 등록을 자체 검사하지 않으며, 심판이 릴레이를 통해 직접 확인함',
       }] : []),
-      ...(config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10 ? [{
+      ...(config.step === 7 || config.step === 8 || config.step === 9 || config.step === 10
+          || config.step === 11 ? [{
         attackId: 'step_up_required',
         expected: '평소와 다른 시각·처음 보는 네트워크·갑작스런 다량 읽기가 겹치면 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
-      ...(config.step === 8 || config.step === 9 || config.step === 10 ? [{
+      ...(config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11 ? [{
         attackId: 'write_zone_step_up',
         expected: '쓰기 구역(POST/PUT/DELETE)은 조회보다 낮은 이상 신호 문턱에서 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 구역 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
       }] : []),
-      ...(config.step === 8 || config.step === 9 || config.step === 10 ? [await anonymousAnnouncementsCheck(app)] : []),
-      ...(config.step === 9 || config.step === 10 ? [{
+      ...(config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11
+        ? [await anonymousAnnouncementsCheck(app)] : []),
+      ...(config.step === 9 || config.step === 10 || config.step === 11 ? [{
         attackId: 'network_burst_suspected',
         expected: '처음 보는 네트워크와 갑작스런 다량 조회가 함께 나타나면 재확인(step_up)을 요구함',
         observed: '미실행: 이 배포 서버 함수는 decide()의 판정을 아직 적용하지 않으며, 심판이 반 엔진을 통해 직접 확인함',
@@ -103,7 +106,8 @@ export async function runAttackChecks(config) {
         expected: '같은 가명 사용자의 10분 내 121건 초과 조회는 회수 제안(propose_revocation)으로 이어짐',
         observed: '미실행: detect()는 로컬 연습 함수일 뿐 운영 반 엔진의 사건 전달·접속 회수와 연결돼 있지 않으며, 심판이 직접 확인함',
       }] : []),
-      ...(config.step === 10 ? [await anonymousRestoreCheck(app)] : []),
+      ...(config.step === 10 || config.step === 11 ? [await anonymousRestoreCheck(app)] : []),
+      ...(config.step === 11 ? [await anonymousDevicesCheck(app), await deviceApprovalCheck(app)] : []),
     ];
   }
 
@@ -249,6 +253,46 @@ async function anonymousRestoreCheck(app) {
     observed: response.status === 401
       ? '비로그인 복원 요청이 정상 거부됨 (HTTP 401)'
       : `비로그인 복원 요청이 401이 아님 (HTTP ${response.status})`,
+  };
+}
+
+// 11단계: 기기 승인 상태(/api/devices)도 로그인이 필요합니다. 비로그인 요청이 401로
+// 거부되는지만 자동으로 확인합니다.
+async function anonymousDevicesCheck(app) {
+  const expected = '비로그인 요청으로 기기 승인 상태(/api/devices)를 조회하면 401로 거부되어야 함';
+  const response = await fetch(new URL('/api/devices', app), {
+    redirect: 'error', signal: AbortSignal.timeout(10000),
+  });
+  return {
+    attackId: 'anonymous_devices_read', expected,
+    observed: response.status === 401
+      ? '비로그인 승인 상태 조회가 정상 거부됨 (HTTP 401)'
+      : `비로그인 승인 상태 조회가 401이 아님 (HTTP ${response.status})`,
+  };
+}
+
+// 11단계: 로그인했어도 기기(계정)가 승인되지 않으면 /api/notes가 403으로 거부해야
+// 합니다. 토큰은 저장소에 두지 않고 ALEPH_CHECK_TOKEN_A로만 받습니다. 이 계정이 이미
+// 승인된 상태라면(학생이 직접 승인 처리한 뒤) 관찰값이 승인됨으로 나올 수 있습니다 —
+// 그 경우도 그대로 기록하며 심판 판정으로 바꿔 쓰지 않습니다.
+async function deviceApprovalCheck(app) {
+  const expected = '기기가 승인되지 않은 계정의 /api/notes 요청은 403 DEVICE_NOT_APPROVED로 거부되어야 함';
+  const token = process.env.ALEPH_CHECK_TOKEN_A;
+  if (!token) {
+    return { attackId: 'device_not_approved', expected,
+      observed: '미실행: ALEPH_CHECK_TOKEN_A 환경변수가 없어 로그인 요청을 보내지 않음' };
+  }
+  const response = await fetch(new URL('/api/notes', app), {
+    redirect: 'error', signal: AbortSignal.timeout(10000),
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  let code = '';
+  try { code = (await response.json())?.error ?? ''; } catch {}
+  return {
+    attackId: 'device_not_approved', expected,
+    observed: response.status === 403 && code === 'DEVICE_NOT_APPROVED'
+      ? '승인되지 않은 계정의 요청이 정상 거부됨 (HTTP 403, DEVICE_NOT_APPROVED)'
+      : `관찰된 응답: HTTP ${response.status}${code ? `, ${code}` : ''}`,
   };
 }
 
