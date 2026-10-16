@@ -298,6 +298,65 @@
 6. 거부 확인(승인 전 상태에서): `curl.exe -i "<publicAppUrl>/api/notes" -H "Authorization: Bearer <내 토큰>"` → 거부돼야 할 결과: `403 {"error":"DEVICE_NOT_APPROVED"}`.
 7. 브라우저 저장소 확인: 로그인한 뒤 개발자 도구 → Application/저장소 탭에서 `localStorage`를 봅니다. 정상 결과: `sb-...-auth-token` 같은 항목이 생기지 않고, 새로고침하면 로그인 화면으로 돌아갑니다. 거부돼야 할 결과: 새로고침 뒤 로그인 없이 바로 기존 화면이 열림(토큰이 저장소에 남아있다는 뜻).
 
+## 운영 안내: 학생 판정기·탐지 규칙·접속 앱·자료실 설치·실행·중지·복구
+
+이 절은 커밋 `a4fde1c`(2026-10-16, 1~11단계 반영) 기준으로 적습니다. 지금까지 토큰(A·B)으로 실제 배포에서 확인한 결과(`own_notes_read`·`device_not_approved`가 `403 DEVICE_NOT_APPROVED`로 실측됨)도 이 커밋 상태를 가리킵니다.
+
+### 누가 만들었는지 (학생 몫 vs 제공 엔진)
+
+| 구성 요소 | 출처 | 비고 |
+|---|---|---|
+| `public/index.html`, `api/*.js`, `schema.sql`, `src/verify-login.mjs`·`src/device-approval.mjs`·`src/note-restore.mjs`·`src/ops-summary.mjs` | **학생** | 실제 배포된 자료실. 로그인·소유자 검사·역할 미신뢰·기기 승인 게이트(`device_approvals`)·메모 백업/복원이 전부 이 코드로 실제 요청에서 동작합니다. |
+| `src/decider.mjs`의 `decide()`, `src/detect.mjs`의 `detect()` | **학생** | `docs/DECIDER_REQUEST.md`·`docs/DETECT_EVENTS.md` 계약 함수만 구현했습니다. **이 배포의 실제 `/api` 요청에는 연결되어 있지 않습니다** — `npm run decider:test`·`detect:test`·`fixture:7`로만 확인되는 로컬 연습입니다(`npm run recon:table`이 이 41건을 모아 보여줍니다). |
+| 기기 등록 여부 확인, 접속 신호(`signals`·`recentEvents`) 검증, 재인증 상태 확인 | **ALEPH SDP 엔진**(반 엔진·릴레이) | `decide()`를 부르기 전에 엔진이 먼저 확인하고, 그 결과값(`deviceRegistered` 등)만 학생 함수에 넘겨줍니다. 학생 코드가 이 확인을 대신 구현하지 않습니다. |
+| 심판 판정, 제출 묶음 접수 | **ALEPH SDP 엔진**의 심판 접수 서버 | `aleph.config.json`의 `judgeIssuer`가 그 주소이며, 운영 측이 ZIP을 만들 때 채웁니다. 학생이 바꾸지 않습니다. |
+| 로그인 토큰 발급·검증(학생 계정) | Supabase Auth(`identityProvider`) | 학생의 Supabase 프로젝트이지만 Auth 서비스 자체는 Supabase가 운영합니다. |
+| 기기 승인 상태(`device_approvals`) 판정·거부 | **학생** | ALEPH 엔진의 "기기 등록"과는 별개의, 학생이 직접 만든 계정 단위 승인 시스템입니다. 실제 승인(= `approved`를 `true`로)은 이 코드가 스스로 하지 않고 Supabase 테이블을 직접 바꿔야만 됩니다. |
+| `docs/DECIDER_REQUEST.md`·`docs/DETECT_EVENTS.md`(요청·응답 계약 문서), `AGENTS.md`(제작 규칙), `vercel.json`·`aleph.config.json`의 틀(필드 구조) | **제공(시작 틀/운영 측)** | 학생이 처음부터 쓴 문서가 아니라, 어떤 값만 쓸 수 있는지·어떤 모양으로 응답해야 하는지를 정해 둔 틀입니다. 학생은 `aleph.config.json`의 **값**(주소 등)만 채우고, 계약·규칙 문서 자체는 고치지 않습니다. |
+
+### 비밀값 — 포장하지 않고 그대로 밝힙니다
+
+- `SUPABASE_SECRET_KEY`(Vercel 환경변수): RLS를 모두 건너뛰는 서버 전용 키입니다. 이 값이 새어나가면 모든 메모·백업·감사 기록을 누구나 읽고 쓸 수 있습니다 — "그냥 설정값"이 아니라 이 자료실 전체의 유일한 방어선입니다. 코드·README·제출 묶음 어디에도 실제 값을 적지 않고, Vercel 프로젝트 설정의 **Environment Variables** 화면에만 넣습니다.
+- `ALEPH_CHECK_TOKEN_A`/`_B`(로그인 토큰): 학생 본인 시험 계정의 접속 토큰입니다. 터미널 환경변수로만 넣고(`$env:ALEPH_CHECK_TOKEN_A="..."`), 파일에 저장하거나 저에게 보내지 않습니다. 터미널을 닫으면 사라집니다.
+- `judgeIssuer`·심판 토큰: ALEPH SDP 엔진이 발급·검증하며 학생이 값을 만들거나 바꾸지 않습니다.
+- `public/index.html`의 `SUPABASE_PUBLISHABLE_KEY`(`sb_publishable_...`)는 **공개 키**라 코드에 있어도 되지만, 위 서버 전용 키와 이름이 비슷해 헷갈리기 쉬우니 구분해서 봅니다.
+
+### 설치
+
+1. GitHub 저장소(본인 계정, Public) + Vercel 프로젝트 연결(1단계 Deploy 버튼).
+2. Supabase 프로젝트를 만들고, `schema.sql` 전체를 **위에서 아래 순서로** SQL Editor에서 실행합니다(2·8·10·11단계 블록이 순서대로 있습니다 — 11단계의 `device_approvals`를 빠뜨리면 `/api/notes`가 전부 `500 DATABASE_QUERY_ERROR`로 죽습니다, 오늘 실측한 그대로).
+3. Vercel 프로젝트 설정의 Environment Variables에 `SUPABASE_URL`·`SUPABASE_SECRET_KEY`를 입력합니다(값은 Supabase 프로젝트 설정 화면에서 그대로 복사).
+4. `aleph.config.json`의 `publicAppUrl`·`identityProvider`·`originalApiUrl`·`allowedRoutes`를 실제 배포 값으로 맞춥니다. `judgeIssuer`는 손대지 않습니다.
+
+### 실행
+
+- **로컬 데모만**: `npm run build -- --local` (Vercel 배포나 심판 접수를 증명하지 않습니다)
+- **배포**: `git push` → Vercel이 `npm run build` 실행 → Git 저장소·커밋·배포 URL을 검증해 `public/aleph.json` 생성 → 실패하면 빈 주소를 내보내지 않고 빌드가 멈춥니다.
+- **동작 순서**: 로그인(Supabase Auth) → `/api/devices`로 기기 승인 확인(미승인이면 자료 화면 비움, `/api/notes` 호출 안 함) → 승인된 계정만 `/api/notes`가 열림 → 세션은 저장소에 남기지 않아 새로고침마다 다시 로그인.
+
+### 중지 (지금 가진 수단만 적습니다 — 지어내지 않음)
+
+- **계정 한 개만 막기**: Supabase 테이블 편집기에서 `device_approvals`의 그 `owner_id` 행 `approved`를 `false`로 되돌립니다. 재배포 없이 다음 요청부터 바로 `403 DEVICE_NOT_APPROVED`로 막힙니다(오늘 실측한 거부 경로와 동일).
+- **전체 자료실 막기**: Vercel 환경변수에서 `SUPABASE_SECRET_KEY`를 **지우면** 모든 서버 함수가 `500 SERVER_CONFIGURATION_ERROR`로 멈춥니다(코드가 값이 없음을 직접 검사). **값은 있지만 틀리게** 바꾸면 그 검사는 통과하고 실제 DB 조회에서 실패해 `500 DATABASE_QUERY_ERROR`로 멈춥니다 — 증상은 비슷해도 원인 코드가 다릅니다. 되돌릴 때는 올바른 값을 다시 넣고 재배포해야 합니다 — 둘 다 즉각적이지만 거친 중지입니다.
+- **DB 자체 막기**: Supabase 프로젝트를 Pause하면 모든 서버 함수가 DB 접근 실패로 멈춥니다. 복구하려면 프로젝트를 Resume해야 합니다.
+- 이 저장소에는 "접속 회수 집행" 버튼이나 API가 없습니다 — `detect()`의 `propose_revocation`은 제안만 하며, 실제 집행 수단은 위 세 가지(기기 승인 되돌리기·서버 키 무효화·DB 일시정지)뿐입니다.
+
+### 복구
+
+1. **정책(허용 경로 등) 복구**: `npm run restore:check`로 `docs/policy-backup`의 검증된 사본과 현재 `aleph.config.json`·`src/decider.mjs`의 차이만 확인 → 그 버전을 그대로 `npm run restore:apply -- --confirm-version <버전>`에 넣어야 적용됩니다. 결과는 `docs/policy-backup/audit-log.jsonl`에 추가만 됩니다.
+2. **메모 한 건 복구**: 본인 로그인 토큰으로 `curl.exe -i -X POST "<publicAppUrl>/api/notes/<id>/restore" -H "Authorization: Bearer <토큰>"` → `notes_backup`과 ID·소유자·내용 지문이 모두 같을 때만 그 한 건을 되돌리고 `restore_audit`에 한 줄 남습니다.
+3. **복구 뒤 재확인**: 위 "복구 뒤 1~9단계 재확인 순서"를 따르고, 로컬 41건은 `node scripts/recon-table.mjs`로, 토큰이 있으면 실제 배포까지 `node scripts/bundle.mjs`로 다시 확인합니다.
+
+### 재현 순서 (처음부터 끝까지 한 번에)
+
+1. `npm install`
+2. Supabase에 `schema.sql` 전체 실행 (순서대로, 11단계 `device_approvals` 포함)
+3. Vercel 환경변수에 `SUPABASE_URL`·`SUPABASE_SECRET_KEY` 입력
+4. `git push` → 배포 대기
+5. `npm run recon:table` — 41건 로컬 실측 (미실행 0 확인)
+6. 배포 사이트에서 로그인 → 승인 전 자료 없음 확인 → Supabase에서 승인 → 자료실 정상 확인
+7. `$env:ALEPH_CHECK_TOKEN_A`/`_B` 설정 후 `node scripts/bundle.mjs` — 실제 배포 거부/허용 실측
+
 ## 다음 단계의 코딩 도구에 전달할 규칙
 
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 2단계부터는 자료 보호를 구현할 때 `public/data.json`을 복사하는 1단계 빌드 흐름도 함께 바꿔야 합니다. 3단계 이후의 로그인, 허용 경로, 5단계의 원본 API 주소, 6단계 이후 정책 규칙은 해당 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
