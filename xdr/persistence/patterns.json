@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "persistence",
+  "patterns": [
+    {
+      "name": "서명 없는 새 서비스 등록",
+      "condition": "서명되지 않은 새 서비스가 등록되거나, 기존 서비스의 실행 파일이 의심스러운 위치(임시 폴더 등)를 가리키도록 바뀐다",
+      "basis": "MITRE ATT&CK T1543(시스템 프로세스 생성·변경) — 서명 없는 새 서비스 등록"
+    },
+    {
+      "name": "낯선 예약 작업",
+      "condition": "평소에 없던 예약 작업이 새로 만들어지거나, 처음 보는 예약 작업이 의심스러운 위치의 실행 파일을 실행한다",
+      "basis": "MITRE ATT&CK T1053(예약 작업) — 낯선 예약 작업"
+    },
+    {
+      "name": "시작 폴더 변경",
+      "condition": "시작 폴더(Startup)에 평소 목록에 없는 프로그램이 추가된다",
+      "basis": "MITRE ATT&CK T1543(시스템 프로세스 생성·변경) — 시작 폴더 변경"
+    }
+  ]
+}

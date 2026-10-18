@@ -1,0 +1,94 @@
+{
+  "schema": "aleph.xdr.denylist.v1",
+  "moduleKey": "persistence",
+  "rules": [
+    {
+      "ruleId": "xdr_persistence_ps-01",
+      "type": "deny",
+      "source": "203.0.113.12",
+      "alertId": "ps-01",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "서명 없는 새 서비스 등록",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-02",
+      "type": "deny",
+      "source": "203.0.113.12",
+      "alertId": "ps-02",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "낯선 예약 작업",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-03",
+      "type": "deny",
+      "source": "198.51.100.12",
+      "alertId": "ps-03",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "시작 폴더 변경",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-04",
+      "type": "deny",
+      "source": "192.0.2.12",
+      "alertId": "ps-04",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "서명 없는 새 서비스 등록",
+      "confidence": 0.95,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-05",
+      "type": "deny",
+      "source": "203.0.113.19",
+      "alertId": "ps-05",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "낯선 예약 작업",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-06",
+      "type": "deny",
+      "source": "198.51.100.19",
+      "alertId": "ps-06",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "서명 없는 새 서비스 등록",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-07",
+      "type": "deny",
+      "source": "192.0.2.19",
+      "alertId": "ps-07",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "낯선 예약 작업",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    },
+    {
+      "ruleId": "xdr_persistence_ps-08",
+      "type": "deny",
+      "source": "203.0.113.33",
+      "alertId": "ps-08",
+      "reasonCode": "xdr_persistence_block",
+      "basis": "서명 없는 새 서비스 등록",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T07:57:12.112Z",
+      "expiresAt": "2026-10-18T08:57:12.112Z"
+    }
+  ]
+}
