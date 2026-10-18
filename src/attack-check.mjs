@@ -34,9 +34,7 @@ export async function runAttackChecks(config) {
         : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${response.status})` }];
   }
 
-  // 2단계 공격 점검. 1단계의 anonymous_note_read와 같은 요청(비로그인 GET /data.json)이라
-  // 응답을 다시 받아오지 않고 그대로 재사용합니다 — 매 제출마다(1단계 전용이 아니라) 이
-  // 점검 결과를 그대로 포함시킵니다.
+  // 2단계 공격 점검
   const staticResponse = await fetch(new URL('/data.json', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
   });
@@ -48,12 +46,6 @@ export async function runAttackChecks(config) {
         && data.notes.length > 0;
     } catch {}
   }
-  const anonymousNoteRead = {
-    attackId: 'anonymous_note_read', expected: '비로그인 화면에서 가상 메모를 확인',
-    observed: staticVisible
-      ? `비로그인 요청에서 공개 가상 메모 확인 표시가 보임 (HTTP ${staticResponse.status})`
-      : `비로그인 요청에서 확인 표시가 보이지 않음 (HTTP ${staticResponse.status})`,
-  };
 
   const apiResponse = await fetch(new URL('/api/notes', app), {
     redirect: 'error', signal: AbortSignal.timeout(10000),
@@ -71,7 +63,6 @@ export async function runAttackChecks(config) {
       || config.step === 8 || config.step === 9 || config.step === 10 || config.step === 11
       || config.step === 12) {
     return [
-      anonymousNoteRead,
       {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
@@ -130,7 +121,6 @@ export async function runAttackChecks(config) {
 
   if (config.step === 3) {
     return [
-      anonymousNoteRead,
       {
         attackId: 'anonymous_static_data_read',
         expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
@@ -149,7 +139,6 @@ export async function runAttackChecks(config) {
   }
 
   return [
-    anonymousNoteRead,
     {
       attackId: 'anonymous_static_data_read',
       expected: '정적 파일(/data.json) 비로그인 요청 시 가상 메모가 노출되지 않음',
