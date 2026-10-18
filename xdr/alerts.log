@@ -8,3 +8,11 @@
 {"at":"2026-10-18T07:09:45.358Z","alertId":"bf-08","action":"block","reason":"단일 출발지 연속 로그인 실패","source":"192.0.2.18","expiresAt":"2026-10-18T08:09:45.358Z"}
 {"at":"2026-10-18T07:09:45.358Z","alertId":"bf-09","action":"block","reason":"단일 출발지 연속 로그인 실패","source":"198.51.100.8","expiresAt":"2026-10-18T08:09:45.358Z"}
 {"at":"2026-10-18T07:09:45.358Z","alertId":"bf-10","action":"block","reason":"단일 출발지 연속 로그인 실패","source":"203.0.113.40","expiresAt":"2026-10-18T08:09:45.358Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-01","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"203.0.113.10","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-02","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"203.0.113.10","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-03","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"198.51.100.16","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-04","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"192.0.2.16","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-05","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"203.0.113.24","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-06","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"198.51.100.24","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-07","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"192.0.2.24","expiresAt":"2026-10-18T08:47:25.586Z"}
+{"at":"2026-10-18T07:47:25.586Z","alertId":"kc-08","action":"block","reason":"CVE-2021-44228 형태 원격 조회 구문","source":"203.0.113.31","expiresAt":"2026-10-18T08:47:25.586Z"}

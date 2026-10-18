@@ -1,0 +1,16 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "known-cve",
+  "patterns": [
+    {
+      "name": "CVE-2021-44228 형태 원격 조회 구문",
+      "condition": "요청 머리글(예: User-Agent)이나 인자에 ${jndi: 로 시작하는 원격 조회 구문이 들어 있다",
+      "basis": "CVE-2021-44228 형태 요청 — MITRE ATT&CK T1190(외부 공개 앱 악용)의 원격 조회 구문 신호"
+    },
+    {
+      "name": "알려진 취약점 점검 도구 흔적",
+      "condition": "요청 경로나 머리글에 알려진 취약점 점검 도구가 남기는 흔적이 있다",
+      "basis": "MITRE ATT&CK T1190(외부 공개 앱 악용) — 알려진 취약점 점검 도구의 흔적"
+    }
+  ]
+}
