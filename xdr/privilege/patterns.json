@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "privilege",
+  "patterns": [
+    {
+      "name": "관리자 그룹 추가",
+      "condition": "평범한 계정이 관리자(administrators) 그룹에 새로 추가된다",
+      "basis": "MITRE ATT&CK T1078(정상 계정 도용) — 관리자 그룹 추가"
+    },
+    {
+      "name": "처음 보는 관리자 명령",
+      "condition": "처음 보는 주소나 계정에서 관리자 명령이 실행된다",
+      "basis": "MITRE ATT&CK T1068(권한 상승 악용) — 처음 보는 관리자 명령"
+    },
+    {
+      "name": "업무 시간 밖 권한 사용",
+      "condition": "업무 시간(수업 시간) 밖에 관리자 그룹 추가나 관리자 명령 실행 같은 권한 사용이 나타난다",
+      "basis": "MITRE ATT&CK T1068(권한 상승 악용) — 업무 시간 밖 권한 사용"
+    }
+  ]
+}

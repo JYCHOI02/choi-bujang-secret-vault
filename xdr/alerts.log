@@ -24,3 +24,12 @@
 {"at":"2026-10-18T07:57:12.112Z","alertId":"ps-06","action":"block","reason":"서명 없는 새 서비스 등록","source":"198.51.100.19","expiresAt":"2026-10-18T08:57:12.112Z"}
 {"at":"2026-10-18T07:57:12.112Z","alertId":"ps-07","action":"block","reason":"낯선 예약 작업","source":"192.0.2.19","expiresAt":"2026-10-18T08:57:12.112Z"}
 {"at":"2026-10-18T07:57:12.112Z","alertId":"ps-08","action":"block","reason":"서명 없는 새 서비스 등록","source":"203.0.113.33","expiresAt":"2026-10-18T08:57:12.112Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-01","action":"block","reason":"관리자 그룹 추가","source":"203.0.113.11","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-02","action":"block","reason":"처음 보는 관리자 명령","source":"203.0.113.11","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-03","action":"block","reason":"업무 시간 밖 권한 사용","source":"198.51.100.11","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-04","action":"block","reason":"관리자 그룹 추가","source":"192.0.2.11","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-05","action":"block","reason":"관리자 그룹 추가","source":"203.0.113.17","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-06","action":"block","reason":"처음 보는 관리자 명령","source":"198.51.100.17","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-07","action":"block","reason":"관리자 그룹 추가","source":"192.0.2.17","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-08","action":"block","reason":"처음 보는 관리자 명령","source":"203.0.113.27","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:08:12.555Z","alertId":"pv-09","action":"block","reason":"관리자 그룹 추가","source":"198.51.100.27","expiresAt":"2026-10-18T09:08:12.555Z"}

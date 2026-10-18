@@ -1,0 +1,105 @@
+{
+  "schema": "aleph.xdr.denylist.v1",
+  "moduleKey": "privilege",
+  "rules": [
+    {
+      "ruleId": "xdr_privilege_pv-01",
+      "type": "deny",
+      "source": "203.0.113.11",
+      "alertId": "pv-01",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "관리자 그룹 추가",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-02",
+      "type": "deny",
+      "source": "203.0.113.11",
+      "alertId": "pv-02",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "처음 보는 관리자 명령",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-03",
+      "type": "deny",
+      "source": "198.51.100.11",
+      "alertId": "pv-03",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "업무 시간 밖 권한 사용",
+      "confidence": 0.9500000000000001,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-04",
+      "type": "deny",
+      "source": "192.0.2.11",
+      "alertId": "pv-04",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "관리자 그룹 추가",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-05",
+      "type": "deny",
+      "source": "203.0.113.17",
+      "alertId": "pv-05",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "관리자 그룹 추가",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-06",
+      "type": "deny",
+      "source": "198.51.100.17",
+      "alertId": "pv-06",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "처음 보는 관리자 명령",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-07",
+      "type": "deny",
+      "source": "192.0.2.17",
+      "alertId": "pv-07",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "관리자 그룹 추가",
+      "confidence": 0.9500000000000001,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-08",
+      "type": "deny",
+      "source": "203.0.113.27",
+      "alertId": "pv-08",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "처음 보는 관리자 명령",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    },
+    {
+      "ruleId": "xdr_privilege_pv-09",
+      "type": "deny",
+      "source": "198.51.100.27",
+      "alertId": "pv-09",
+      "reasonCode": "xdr_privilege_block",
+      "basis": "관리자 그룹 추가",
+      "confidence": 0.9,
+      "createdAt": "2026-10-18T08:08:12.555Z",
+      "expiresAt": "2026-10-18T09:08:12.555Z"
+    }
+  ]
+}
