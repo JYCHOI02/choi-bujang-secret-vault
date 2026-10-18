@@ -24,33 +24,40 @@ const SQL_MARKER = /\bsql\b|\bselect\b|\bunion\b|데이터베이스/i;
 const SCRIPT_MARKER = /\bscript\b|스크립트/i;
 const PATH_MARKER = /\.\.\/|\bup\b|경로|거슬러|이탈/i;
 
-// data.count(반복 건수)가 있고 많을수록 그 패턴에 더 뚜렷하게 맞습니다. 마커가 없으면
-// 이 패턴의 증거가 전혀 없는 것으로 봅니다 — 반복 건수만으로는 어떤 패턴인지 알 수
-// 없기 때문입니다.
-function markerConfidence(alert, marker) {
-  const text = `${alert?.data?.url ?? ''} ${alert?.rule?.description ?? ''}`;
-  if (!marker.test(text)) return 0;
+// 세 패턴의 조건은 모두 "반복해서 나타난다"입니다 — 어떤 구문인지보다 같은 주소에서
+// 반복되는지가 핵심 신호입니다. data.count(반복 건수)가 없으면(정상 이벤트) 증거가
+// 전혀 없는 것으로 보고, 있으면 그 값만으로 확신도를 매깁니다.
+function repeatConfidence(alert) {
   const count = Number(alert?.data?.count);
-  const repeats = Number.isFinite(count) && count > 0 ? count : 0;
-  return Math.min(1, 0.5 + repeats * 0.05);
+  if (!Number.isFinite(count) || count <= 0) return 0;
+  return Math.min(1, 0.5 + count * 0.05);
+}
+
+// 어떤 패턴인지는 요청 인자·설명의 표식으로 고릅니다. 반복 신호는 있지만 세 표식
+// 중 어디에도 안 걸리면(예: SQL·스크립트·경로가 아닌 다른 주입 표기) 그래도 반복
+// 자체는 근거이므로 block/alert 판정은 유지하고, 이름만 "세 패턴 밖"으로 남깁니다.
+function matchedPatternName(alert) {
+  const text = `${alert?.data?.url ?? ''} ${alert?.rule?.description ?? ''}`;
+  if (SQL_MARKER.test(text)) return PATTERNS[0].name;
+  if (SCRIPT_MARKER.test(text)) return PATTERNS[1].name;
+  if (PATH_MARKER.test(text)) return PATTERNS[2].name;
+  return null;
 }
 
 export function decide(alert) {
-  const scored = [
-    { pattern: PATTERNS[0], confidence: markerConfidence(alert, SQL_MARKER) },
-    { pattern: PATTERNS[1], confidence: markerConfidence(alert, SCRIPT_MARKER) },
-    { pattern: PATTERNS[2], confidence: markerConfidence(alert, PATH_MARKER) },
-  ];
-  scored.sort((a, b) => b.confidence - a.confidence);
-  const best = scored[0];
+  const confidence = repeatConfidence(alert);
 
   let action = 'record';
-  if (best.confidence >= 0.85) action = 'block';
-  else if (best.confidence >= 0.5) action = 'alert';
+  if (confidence >= 0.85) action = 'block';
+  else if (confidence >= 0.5) action = 'alert';
 
+  if (confidence === 0) {
+    return { action, confidence, reason: '일치하는 패턴 없음' };
+  }
+  const matched = matchedPatternName(alert);
   return {
     action,
-    confidence: best.confidence,
-    reason: best.confidence > 0 ? best.pattern.name : '일치하는 패턴 없음',
+    confidence,
+    reason: matched ?? '세 패턴 밖의 반복된 주입 신호',
   };
 }
