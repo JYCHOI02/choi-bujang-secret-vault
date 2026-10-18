@@ -1,0 +1,116 @@
+{
+  "schema": "aleph.xdr.denylist.v1",
+  "moduleKey": "exfiltration",
+  "rules": [
+    {
+      "ruleId": "xdr_exfiltration_ex-01",
+      "type": "deny",
+      "source": "192.0.2.20",
+      "alertId": "ex-01",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 1,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-02",
+      "type": "deny",
+      "source": "192.0.2.20",
+      "alertId": "ex-02",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "업무 시간 밖 압축 파일 반출",
+      "confidence": 1,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-03",
+      "type": "deny",
+      "source": "198.51.100.20",
+      "alertId": "ex-03",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "두 패턴 밖의 유출 관련 신호",
+      "confidence": 0.94,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-04",
+      "type": "deny",
+      "source": "203.0.113.20",
+      "alertId": "ex-04",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 0.97,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-05",
+      "type": "deny",
+      "source": "192.0.2.25",
+      "alertId": "ex-05",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 0.9199999999999999,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-06",
+      "type": "deny",
+      "source": "198.51.100.25",
+      "alertId": "ex-06",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "업무 시간 밖 압축 파일 반출",
+      "confidence": 1,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-07",
+      "type": "deny",
+      "source": "203.0.113.25",
+      "alertId": "ex-07",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 1,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-08",
+      "type": "deny",
+      "source": "192.0.2.26",
+      "alertId": "ex-08",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "두 패턴 밖의 유출 관련 신호",
+      "confidence": 1,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-09",
+      "type": "deny",
+      "source": "198.51.100.26",
+      "alertId": "ex-09",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 0.9299999999999999,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    },
+    {
+      "ruleId": "xdr_exfiltration_ex-10",
+      "type": "deny",
+      "source": "203.0.113.26",
+      "alertId": "ex-10",
+      "reasonCode": "xdr_exfiltration_block",
+      "basis": "처음 보는 목적지로 대용량 전송",
+      "confidence": 0.96,
+      "createdAt": "2026-10-18T08:21:35.847Z",
+      "expiresAt": "2026-10-18T09:21:35.847Z"
+    }
+  ]
+}

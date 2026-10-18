@@ -1,0 +1,16 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "exfiltration",
+  "patterns": [
+    {
+      "name": "처음 보는 목적지로 대용량 전송",
+      "condition": "처음 보는 목적지로 큰 용량의 자료가 한 번에, 또는 같은 목적지로 반복해서 나간다",
+      "basis": "MITRE ATT&CK T1041(명령 통로로 유출)·T1048(다른 프로토콜로 유출) — 처음 보는 목적지로 대용량 전송"
+    },
+    {
+      "name": "업무 시간 밖 압축 파일 반출",
+      "condition": "업무 시간(수업 시간) 밖에 압축 파일이 처음 보는 주소로 나간다",
+      "basis": "MITRE ATT&CK T1048(다른 프로토콜로 유출) — 업무 시간 밖 압축 파일 반출"
+    }
+  ]
+}

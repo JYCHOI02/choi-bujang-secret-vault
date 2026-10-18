@@ -33,3 +33,13 @@
 {"at":"2026-10-18T08:08:12.555Z","alertId":"pv-07","action":"block","reason":"관리자 그룹 추가","source":"192.0.2.17","expiresAt":"2026-10-18T09:08:12.555Z"}
 {"at":"2026-10-18T08:08:12.555Z","alertId":"pv-08","action":"block","reason":"처음 보는 관리자 명령","source":"203.0.113.27","expiresAt":"2026-10-18T09:08:12.555Z"}
 {"at":"2026-10-18T08:08:12.555Z","alertId":"pv-09","action":"block","reason":"관리자 그룹 추가","source":"198.51.100.27","expiresAt":"2026-10-18T09:08:12.555Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-01","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"192.0.2.20","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-02","action":"block","reason":"업무 시간 밖 압축 파일 반출","source":"192.0.2.20","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-03","action":"block","reason":"두 패턴 밖의 유출 관련 신호","source":"198.51.100.20","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-04","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"203.0.113.20","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-05","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"192.0.2.25","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-06","action":"block","reason":"업무 시간 밖 압축 파일 반출","source":"198.51.100.25","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-07","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"203.0.113.25","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-08","action":"block","reason":"두 패턴 밖의 유출 관련 신호","source":"192.0.2.26","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-09","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"198.51.100.26","expiresAt":"2026-10-18T09:21:35.847Z"}
+{"at":"2026-10-18T08:21:35.847Z","alertId":"ex-10","action":"block","reason":"처음 보는 목적지로 대용량 전송","source":"203.0.113.26","expiresAt":"2026-10-18T09:21:35.847Z"}
