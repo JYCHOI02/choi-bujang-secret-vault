@@ -1,0 +1,21 @@
+{
+  "schema": "aleph.xdr.patterns.v1",
+  "moduleKey": "web-injection",
+  "patterns": [
+    {
+      "name": "SQL 구문 삽입",
+      "condition": "요청 인자(URL 쿼리)나 경보 설명에 SQL 구문·키워드(SELECT·UNION·데이터베이스 조회 등) 흔적이 반복해서 나타난다",
+      "basis": "MITRE ATT&CK T1190(외부 공개 앱 악용) — 요청 인자 안의 SQL 구문"
+    },
+    {
+      "name": "스크립트 태그 삽입",
+      "condition": "요청 인자나 경보 설명에 스크립트 태그 삽입 표식이 반복해서 나타난다",
+      "basis": "MITRE ATT&CK T1190(외부 공개 앱 악용) — 요청 인자 안의 스크립트 태그"
+    },
+    {
+      "name": "경로 거슬러 올라가기 반복",
+      "condition": "요청 인자나 경보 설명에 경로를 거슬러 올라가는(../) 표식이 반복해서 나타난다",
+      "basis": "MITRE ATT&CK T1190(외부 공개 앱 악용) — 경로 거슬러 올라가기(../) 반복"
+    }
+  ]
+}
