@@ -1,0 +1,116 @@
+{
+  "schema": "aleph.xdr.denylist.v1",
+  "moduleKey": "brute-force",
+  "rules": [
+    {
+      "ruleId": "xdr_brute_force_bf-01",
+      "type": "deny",
+      "source": "203.0.113.10",
+      "alertId": "bf-01",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-02",
+      "type": "deny",
+      "source": "203.0.113.10",
+      "alertId": "bf-02",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "여러 계정에 같은 비밀번호 대입",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-03",
+      "type": "deny",
+      "source": "198.51.100.20",
+      "alertId": "bf-03",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-04",
+      "type": "deny",
+      "source": "192.0.2.30",
+      "alertId": "bf-04",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-05",
+      "type": "deny",
+      "source": "203.0.113.21",
+      "alertId": "bf-05",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-06",
+      "type": "deny",
+      "source": "198.51.100.44",
+      "alertId": "bf-06",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-07",
+      "type": "deny",
+      "source": "203.0.113.15",
+      "alertId": "bf-07",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-08",
+      "type": "deny",
+      "source": "192.0.2.18",
+      "alertId": "bf-08",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-09",
+      "type": "deny",
+      "source": "198.51.100.8",
+      "alertId": "bf-09",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    },
+    {
+      "ruleId": "xdr_brute_force_bf-10",
+      "type": "deny",
+      "source": "203.0.113.40",
+      "alertId": "bf-10",
+      "reasonCode": "xdr_brute_force_block",
+      "basis": "단일 출발지 연속 로그인 실패",
+      "confidence": 1,
+      "createdAt": "2026-10-18T07:09:45.358Z",
+      "expiresAt": "2026-10-18T08:09:45.358Z"
+    }
+  ]
+}
